@@ -81,49 +81,7 @@ export default function Dashboard() {
   };
 
   const createEvent = () => {
-    Alert.prompt(
-      'Create Event',
-      'Enter wedding details',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Create',
-          onPress: async (eventName) => {
-            if (!eventName) return;
-            
-            try {
-              const response = await fetch(`${BACKEND_URL}/api/events`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  name: eventName,
-                  date: new Date().toISOString().split('T')[0],
-                  location: 'Event Location',
-                  user_id: user?._id,
-                }),
-              });
-
-              const data = await response.json();
-
-              if (data.success) {
-                // Update user's current event
-                const updatedUser = { ...user, current_event_id: data.event._id };
-                await AsyncStorage.setItem('user_data', JSON.stringify(updatedUser));
-                loadEventAndStats();
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Failed to create event');
-            }
-          },
-        },
-      ],
-      'plain-text'
-    );
+    router.push('/create-event');
   };
 
   if (loading) {
