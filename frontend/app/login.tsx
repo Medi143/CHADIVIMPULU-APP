@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,264 +9,153 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { auth } from '../lib/firebase';
-import {
-  signInWithPhoneNumber,
-  RecaptchaVerifier,
-  ConfirmationResult,
-  ApplicationVerifier,
-} from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../constants/theme';
-import {
-  CodeField,
-  Cursor,
-  useBlurOnFulfill,
-  useClearByFocusCell,
-} from 'react-native-confirmation-code-field';
+import { Ionicons } from '@expo/vector-icons';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-const CELL_COUNT = 6;
 
 export default function Login() {
   const router = useRouter();
   const { setUser } = useAuth();
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
   const [name, setName] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
   const [loading, setLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-  const [resendCount, setResendCount] = useState(0);
-  const recaptchaVerifier = useRef<RecaptchaVerifier | null>(null);
-  
-  const ref = useBlurOnFulfill({ value: otp, cellCount: CELL_COUNT });
-  const [props, getCellOnLayoutHandler] = useClearByFocusCell({
-    value: otp,
-    setValue: setOtp,
-  });
 
-  useEffect(() => {
-    // Initialize reCAPTCHA verifier for web platform
-    if (Platform.OS === 'web' && !recaptchaVerifier.current) {
-      try {
-        // Create invisible reCAPTCHA
-        recaptchaVerifier.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {
-            console.log('reCAPTCHA verified');
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
-          },
-        });
-      } catch (error) {
-        console.error('Error initializing reCAPTCHA:', error);
-      }
-    }
-
-    return () => {
-      if (recaptchaVerifier.current) {
-        recaptchaVerifier.current.clear();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  const sendOTP = async () => {
+  const handleLogin = async () => {
+    // Validate phone number
     if (!phone || phone.length < 10) {
       Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number');
       return;
     }
 
-    if (resendCount >= 3) {
-      Alert.alert(
-        'Too Many Attempts',
-        'You have reached the maximum number of OTP requests. Please try again later.'
-      );
-      return;
-    }
-
-    setLoading(true);
-    const formattedPhone = phone.startsWith('+91') ? phone : `+91${phone}`;
-
-    try {
-      if (Platform.OS === 'web') {
-        // Web platform - use Firebase Phone Auth with reCAPTCHA
-        if (!recaptchaVerifier.current) {
-          throw new Error('reCAPTCHA not initialized. Please refresh the page.');
-        }
-
-        const confirmation = await signInWithPhoneNumber(
-          auth,
-          formattedPhone,
-          recaptchaVerifier.current
-        );
-
-        setConfirmationResult(confirmation);
-        setStep('otp');
-        setResendTimer(30);
-        setResendCount((prev) => prev + 1);
-        Alert.alert(
-          'OTP Sent',
-          `A 6-digit verification code has been sent to ${formattedPhone} via SMS.`
-        );
-      } else {
-        // Mobile platform (iOS/Android)
-        // For Expo, we need to use a different approach
-        // Using backend-based OTP generation as fallback
-        const response = await fetch(`${BACKEND_URL}/api/auth/send-otp`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phone: formattedPhone,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setStep('otp');
-          setResendTimer(30);
-          setResendCount((prev) => prev + 1);
-          Alert.alert(
-            'OTP Sent',
-            `A 6-digit verification code has been sent to ${formattedPhone} via SMS.\\n\\nNote: In production, you'll receive real SMS. For testing, check console logs.`
-          );
-        } else {
-          throw new Error(data.message || 'Failed to send OTP');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error sending OTP:', error);
-      let errorMessage = 'Failed to send OTP. Please try again.';
-
-      if (error.code === 'auth/invalid-phone-number') {
-        errorMessage = 'Invalid phone number format. Please check and try again.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage =
-          'Too many requests. Please wait a few minutes before trying again.';
-      } else if (error.code === 'auth/quota-exceeded') {
-        errorMessage = 'SMS quota exceeded. Please try again later.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert('Error Sending OTP', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      Alert.alert('Invalid OTP', 'Please enter the complete 6-digit OTP');
+    // Validate name
+    if (!name || name.trim().length < 2) {
+      Alert.alert('Name Required', 'Please enter your name to continue');
       return;
     }
 
     setLoading(true);
 
     try {
-      let idToken = '';
-
-      if (Platform.OS === 'web' && confirmationResult) {
-        // Web platform - verify with Firebase
-        const userCredential = await confirmationResult.confirm(otp);
-        idToken = await userCredential.user.getIdToken();
-      } else {
-        // Mobile platform - verify with backend
-        idToken = `dev_token_${Date.now()}`;
-      }
-
       const formattedPhone = phone.startsWith('+91') ? phone : `+91${phone}`;
 
-      // Create or update user in backend
-      const response = await fetch(`${BACKEND_URL}/api/auth/verify-otp`, {
+      // Direct login - no OTP verification
+      const response = await fetch(`${BACKEND_URL}/api/auth/instant-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           phone: formattedPhone,
-          otp_token: idToken,
-          name: name || `User ${phone.slice(-4)}`,
+          name: name.trim(),
+          role: selectedRole,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        // Save user data and token
         await setUser(data.user);
-        Alert.alert('Success', 'Login successful!', [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]);
+        if (data.token) {
+          await setToken(data.token);
+        }
+        
+        // Navigate to dashboard
+        router.replace('/(tabs)');
       } else {
-        throw new Error(data.message || 'Verification failed');
+        throw new Error(data.message || 'Login failed');
       }
     } catch (error: any) {
-      console.error('Error verifying OTP:', error);
-      let errorMessage = 'Invalid OTP. Please check and try again.';
-
-      if (error.code === 'auth/invalid-verification-code') {
-        errorMessage = 'Invalid OTP code. Please enter the correct 6-digit code.';
-      } else if (error.code === 'auth/code-expired') {
-        errorMessage = 'OTP has expired. Please request a new code.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert('Verification Failed', errorMessage);
-      setOtp('');
+      console.error('Login error:', error);
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Unable to login. Please check your connection and try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendOTP = () => {
-    if (resendTimer > 0) {
-      Alert.alert(
-        'Please Wait',
-        `You can request a new OTP in ${resendTimer} seconds.`
-      );
-      return;
-    }
-
-    setOtp('');
-    setStep('phone');
-    sendOTP();
-  };
+  const RoleCard = ({ 
+    role, 
+    icon, 
+    title, 
+    description 
+  }: { 
+    role: 'admin' | 'staff' | 'viewer'; 
+    icon: string; 
+    title: string; 
+    description: string;
+  }) => (
+    <TouchableOpacity
+      style={[
+        styles.roleCard,
+        selectedRole === role && styles.roleCardSelected,
+      ]}
+      onPress={() => setSelectedRole(role)}
+      disabled={loading}
+    >
+      <View style={styles.roleCardContent}>
+        <Ionicons
+          name={icon as any}
+          size={32}
+          color={selectedRole === role ? theme.colors.primary : theme.colors.textSecondary}
+        />
+        <View style={styles.roleInfo}>
+          <Text style={[
+            styles.roleTitle,
+            selectedRole === role && styles.roleTitleSelected
+          ]}>
+            {title}
+          </Text>
+          <Text style={styles.roleDescription}>{description}</Text>
+        </View>
+        {selectedRole === role && (
+          <Ionicons
+            name="checkmark-circle"
+            size={24}
+            color={theme.colors.primary}
+          />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome to</Text>
-        <Text style={styles.appName}>Chadivimpulu</Text>
-        <Text style={styles.subtitle}>Digital Wedding Gift Registry</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome to</Text>
+            <Text style={styles.appName}>Chadivimpulu</Text>
+            <Text style={styles.subtitle}>Digital Wedding Gift Registry</Text>
+          </View>
 
-        {step === 'phone' ? (
+          {/* Info Box */}
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
+            <Text style={styles.infoText}>
+              Enter your mobile number to continue. No OTP required!
+            </Text>
+          </View>
+
+          {/* Form */}
           <View style={styles.form}>
-            <Text style={styles.label}>Phone Number</Text>
+            {/* Phone Number Input */}
+            <Text style={styles.label}>Mobile Number *</Text>
             <View style={styles.phoneInput}>
               <Text style={styles.countryCode}>+91</Text>
               <TextInput
@@ -278,112 +167,74 @@ export default function Login() {
                 maxLength={10}
                 placeholderTextColor={theme.colors.textSecondary}
                 editable={!loading}
+                autoFocus
               />
             </View>
 
-            <Text style={styles.label}>Name (Optional)</Text>
+            {/* Name Input */}
+            <Text style={styles.label}>Your Name *</Text>
             <TextInput
               style={[styles.input, styles.fullInput]}
-              placeholder="Enter your name"
+              placeholder="Enter your full name"
               value={name}
               onChangeText={setName}
               placeholderTextColor={theme.colors.textSecondary}
               editable={!loading}
+              autoCapitalize="words"
             />
 
+            {/* Role Selection */}
+            <Text style={styles.label}>Select Your Role *</Text>
+            <View style={styles.rolesContainer}>
+              <RoleCard
+                role="admin"
+                icon="shield-checkmark"
+                title="Admin (Owner)"
+                description="Full access - Manage everything"
+              />
+              <RoleCard
+                role="staff"
+                icon="people"
+                title="Staff"
+                description="Add & edit gift entries"
+              />
+              <RoleCard
+                role="viewer"
+                icon="eye"
+                title="Viewer"
+                description="View-only access"
+              />
+            </View>
+
+            {/* Continue Button */}
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={sendOTP}
+              onPress={handleLogin}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={theme.colors.white} />
+                <View style={styles.buttonContent}>
+                  <ActivityIndicator color={theme.colors.white} />
+                  <Text style={styles.buttonText}>  Logging in...</Text>
+                </View>
               ) : (
-                <Text style={styles.buttonText}>Send OTP</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.infoBox}>
-              <Text style={styles.infoText}>
-                📱 You will receive a 6-digit OTP via SMS
-              </Text>
-              <Text style={styles.infoText}>
-                🔒 Your phone number is kept secure
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.form}>
-            <Text style={styles.label}>Enter OTP</Text>
-            <Text style={styles.hint}>Sent to +91{phone}</Text>
-
-            <CodeField
-              ref={ref}
-              {...props}
-              value={otp}
-              onChangeText={setOtp}
-              cellCount={CELL_COUNT}
-              rootStyle={styles.codeFieldRoot}
-              keyboardType="number-pad"
-              textContentType="oneTimeCode"
-              renderCell={({ index, symbol, isFocused }) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.cell,
-                    isFocused && styles.focusCell,
-                  ]}
-                  onLayout={getCellOnLayoutHandler(index)}
-                >
-                  <Text style={styles.cellText}>
-                    {symbol || (isFocused ? <Cursor /> : null)}
-                  </Text>
+                <View style={styles.buttonContent}>
+                  <Text style={styles.buttonText}>Continue</Text>
+                  <Ionicons name="arrow-forward" size={20} color={theme.colors.white} />
                 </View>
               )}
-            />
-
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={verifyOTP}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={theme.colors.white} />
-              ) : (
-                <Text style={styles.buttonText}>Verify OTP</Text>
-              )}
             </TouchableOpacity>
 
-            <View style={styles.resendContainer}>
-              {resendTimer > 0 ? (
-                <Text style={styles.resendTimer}>
-                  Resend OTP in {resendTimer}s
-                </Text>
-              ) : (
-                <TouchableOpacity onPress={handleResendOTP} disabled={loading}>
-                  <Text style={styles.resendText}>
-                    Didn't receive OTP? Tap to resend
-                  </Text>
-                </TouchableOpacity>
-              )}
+            {/* Privacy Note */}
+            <View style={styles.privacyNote}>
+              <Ionicons name="lock-closed" size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.privacyText}>
+                Your information is stored securely. You'll stay logged in on this device.
+              </Text>
             </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                setStep('phone');
-                setOtp('');
-              }}
-              style={styles.backButton}
-              disabled={loading}
-            >
-              <Text style={styles.backButtonText}>← Change Number</Text>
-            </TouchableOpacity>
           </View>
-        )}
-      </View>
-
-      {/* reCAPTCHA container for web */}
-      {Platform.OS === 'web' && <div id="recaptcha-container"></div>}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -393,10 +244,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     padding: theme.spacing.lg,
     justifyContent: 'center',
+  },
+  header: {
+    marginBottom: theme.spacing.xl,
   },
   title: {
     fontSize: theme.fontSize.xl,
@@ -414,7 +271,23 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.secondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.xl * 2,
+    marginBottom: theme.spacing.md,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E6',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
   },
   form: {
     width: '100%',
@@ -424,12 +297,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
-  },
-  hint: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.lg,
-    textAlign: 'center',
+    marginTop: theme.spacing.md,
   },
   phoneInput: {
     flexDirection: 'row',
@@ -438,7 +306,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    marginBottom: theme.spacing.lg,
     paddingHorizontal: theme.spacing.md,
   },
   countryCode: {
@@ -459,87 +326,79 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
   },
-  codeFieldRoot: {
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
-    width: '100%',
-    justifyContent: 'center',
+  rolesContainer: {
+    marginTop: theme.spacing.sm,
   },
-  cell: {
-    width: 45,
-    height: 60,
-    lineHeight: 58,
-    fontSize: theme.fontSize.xxl,
+  roleCard: {
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.cardBackground,
-    textAlign: 'center',
-    borderRadius: theme.borderRadius.md,
-    marginHorizontal: 4,
-    justifyContent: 'center',
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  roleCardSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: '#FFF9E6',
+  },
+  roleCardContent: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  focusCell: {
-    borderColor: theme.colors.primary,
-    borderWidth: 2,
+  roleInfo: {
+    flex: 1,
+    marginLeft: theme.spacing.md,
   },
-  cellText: {
-    fontSize: theme.fontSize.xxl,
-    fontWeight: 'bold',
+  roleTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
     color: theme.colors.text,
-    textAlign: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  roleTitleSelected: {
+    color: theme.colors.secondary,
+  },
+  roleDescription: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
   },
   button: {
     backgroundColor: theme.colors.secondary,
-    height: 50,
+    height: 56,
     borderRadius: theme.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.xl,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   buttonText: {
     color: theme.colors.white,
     fontSize: theme.fontSize.lg,
     fontWeight: '600',
   },
-  infoBox: {
-    marginTop: theme.spacing.xl,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-  },
-  infoText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-  },
-  resendContainer: {
-    marginTop: theme.spacing.lg,
+  privacyNote: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  resendTimer: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  resendText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.secondary,
-    fontWeight: '600',
-  },
-  backButton: {
     marginTop: theme.spacing.lg,
-    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
   },
-  backButtonText: {
-    color: theme.colors.secondary,
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
+  privacyText: {
+    flex: 1,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.sm,
+    textAlign: 'center',
   },
 });

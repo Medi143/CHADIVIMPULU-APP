@@ -96,6 +96,11 @@ class Staff(BaseModel):
 class SendOTPRequest(BaseModel):
     phone: str
 
+class InstantLoginRequest(BaseModel):
+    phone: str
+    name: str
+    role: str = "admin"  # admin, staff, viewer
+
 class VerifyOTPRequest(BaseModel):
     phone: str
     otp_token: str
@@ -133,6 +138,75 @@ async def get_current_user(token: str) -> dict:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 # ==================== AUTH ENDPOINTS ====================
+@api_router.post("/auth/instant-login")
+async def instant_login(request: InstantLoginRequest):
+    """
+    Instant login without OTP verification.
+    Perfect for trusted environments like weddings where speed is critical.
+    """
+    try:
+        # Validate phone number format
+        if not request.phone or len(request.phone) < 10:
+            raise HTTPException(status_code=400, detail="Invalid phone number")
+        
+        # Validate name
+        if not request.name or len(request.name.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Name is required")
+        
+        # Validate role
+        if request.role not in ['admin', 'staff', 'viewer']:
+            raise HTTPException(status_code=400, detail="Invalid role")
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"phone": request.phone})
+        
+        if existing_user:
+            # Update existing user
+            await db.users.update_one(
+                {"phone": request.phone},
+                {
+                    "$set": {
+                        "name": request.name.strip(),
+                        "role": request.role,
+                    }
+                }
+            )
+            user_data = serialize_doc(existing_user)
+            user_data["name"] = request.name.strip()
+            user_data["role"] = request.role
+            
+            logger.info(f"✅ User logged in: {request.name} ({request.phone}) - Role: {request.role}")
+        else:
+            # Create new user
+            user = User(
+                phone=request.phone,
+                name=request.name.strip(),
+                role=request.role
+            )
+            result = await db.users.insert_one(user.dict())
+            user_data = serialize_doc({**user.dict(), "_id": result.inserted_id})
+            
+            logger.info(f"🆕 New user created: {request.name} ({request.phone}) - Role: {request.role}")
+        
+        # Generate a simple session token
+        import hashlib
+        import time
+        session_token = hashlib.sha256(
+            f"{request.phone}_{time.time()}".encode()
+        ).hexdigest()
+        
+        return {
+            "success": True,
+            "user": user_data,
+            "token": session_token,
+            "message": "Login successful"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in instant login: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/auth/send-otp")
 async def send_otp(request: SendOTPRequest):
     """
