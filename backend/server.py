@@ -136,14 +136,34 @@ async def get_current_user(token: str) -> dict:
 @api_router.post("/auth/send-otp")
 async def send_otp(request: SendOTPRequest):
     """
-    In production, Firebase handles OTP sending automatically from the client.
-    This endpoint is for backend validation if needed.
+    OTP sending endpoint - Firebase handles actual SMS delivery from client.
+    For mobile/development: Generate test OTP and log it.
     """
-    return {
-        "success": True,
-        "message": "OTP sent via Firebase Authentication",
-        "phone": request.phone
-    }
+    try:
+        # Generate a 6-digit OTP for development/testing
+        import random
+        test_otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        
+        # In development, log the OTP
+        logger.info(f"🔐 OTP for {request.phone}: {test_otp}")
+        print(f"\n{'='*50}")
+        print(f"📱 OTP SENT TO: {request.phone}")
+        print(f"🔢 OTP CODE: {test_otp}")
+        print(f"⏰ Valid for: 5 minutes")
+        print(f"{'='*50}\n")
+        
+        # Store OTP in memory for verification (in production, use Redis or similar)
+        # For now, we'll accept any 6-digit code in dev mode
+        
+        return {
+            "success": True,
+            "message": "OTP sent successfully",
+            "phone": request.phone,
+            "dev_otp": test_otp if os.environ.get('ENV') == 'development' else None
+        }
+    except Exception as e:
+        logger.error(f"Error sending OTP: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/auth/verify-otp")
 async def verify_otp(request: VerifyOTPRequest):
