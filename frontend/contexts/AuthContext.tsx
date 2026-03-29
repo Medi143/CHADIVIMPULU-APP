@@ -11,18 +11,17 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
-  setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
+  login: (userData: User) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USER_STORAGE_KEY = 'chadivimpulu_user';
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,15 +30,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadStoredUser = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      const tokenData = await AsyncStorage.getItem('auth_token');
+      const userData = await AsyncStorage.getItem(USER_STORAGE_KEY);
       
       if (userData) {
         setUser(JSON.parse(userData));
-      }
-      
-      if (tokenData) {
-        setToken(tokenData);
       }
     } catch (error) {
       console.error('Error loading stored user:', error);
@@ -48,33 +42,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const login = async (userData: User) => {
+    try {
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+      setUser(userData);
+    } catch (error) {
+      console.error('Error saving user data:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
-    await AsyncStorage.removeItem('user_data');
-    await AsyncStorage.removeItem('auth_token');
-    setUser(null);
-    setToken(null);
+    try {
+      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      setUser(null);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const value = {
     user,
-    token,
     loading,
-    setUser: async (newUser: User | null) => {
-      setUser(newUser);
-      if (newUser) {
-        await AsyncStorage.setItem('user_data', JSON.stringify(newUser));
-      } else {
-        await AsyncStorage.removeItem('user_data');
-      }
-    },
-    setToken: async (newToken: string | null) => {
-      setToken(newToken);
-      if (newToken) {
-        await AsyncStorage.setItem('auth_token', newToken);
-      } else {
-        await AsyncStorage.removeItem('auth_token');
-      }
-    },
+    login,
     logout
   };
 

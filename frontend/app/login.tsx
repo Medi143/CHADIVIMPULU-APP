@@ -20,7 +20,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Login() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const { login } = useAuth();
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
@@ -60,11 +60,8 @@ export default function Login() {
       const data = await response.json();
 
       if (data.success) {
-        // Save user data and token
-        await setUser(data.user);
-        if (data.token) {
-          await setToken(data.token);
-        }
+        // Save user session using simplified login
+        await login(data.user);
         
         // Navigate to dashboard
         router.replace('/(tabs)');
