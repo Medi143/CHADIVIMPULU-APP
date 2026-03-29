@@ -25,8 +25,20 @@ import string
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate(str(ROOT_DIR / 'firebase-admin.json'))
+# Initialize Firebase Admin SDK from environment variables
+firebase_cred_dict = {
+    "type": os.environ.get('FIREBASE_TYPE', 'service_account'),
+    "project_id": os.environ.get('FIREBASE_PROJECT_ID'),
+    "private_key_id": os.environ.get('FIREBASE_PRIVATE_KEY_ID'),
+    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY'),
+    "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL'),
+    "client_id": os.environ.get('FIREBASE_CLIENT_ID'),
+    "auth_uri": os.environ.get('FIREBASE_AUTH_URI'),
+    "token_uri": os.environ.get('FIREBASE_TOKEN_URI'),
+    "auth_provider_x509_cert_url": os.environ.get('FIREBASE_AUTH_PROVIDER_CERT_URL'),
+    "client_x509_cert_url": os.environ.get('FIREBASE_CLIENT_CERT_URL'),
+}
+cred = credentials.Certificate(firebase_cred_dict)
 initialize_app(cred)
 
 # MongoDB connection
