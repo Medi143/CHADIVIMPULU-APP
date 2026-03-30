@@ -278,4 +278,116 @@ test_plan:
 
 agent_communication:
     - agent: "testing"
-      message: "Comprehensive backend testing completed successfully. All 17 tests passed with 100% success rate. The Chadivimpulu Wedding Gift Tracking App backend is fully functional with all API endpoints working correctly. Authentication uses Firebase (mocked for testing), all CRUD operations work, filtering and search are functional, dashboard stats are accurate, reports generate properly, and export functions produce valid PDF/Excel files. No critical issues found."
+      message: "Comprehensive backend testing completed successfully. All 17 tests passed with 100% success rate."
+    - agent: "main"
+      message: "Major backend refactor completed: 1) Removed Firebase dependency (instant login only). 2) Updated CreateEventRequest to accept all new fields (event_type, bride_name, groom_name, couple_photo, qr_code, etc.). 3) Added auto-increment S.No for gift entries using MongoDB counters collection. 4) Gift entries now include 'area' field and S.No. 5) Reports API now returns 'all_entries' with S.No for tabular display. 6) Dashboard returns guest_limit. Please retest all backend endpoints especially: POST /api/events (new fields), POST /api/gifts (auto S.No), GET /api/reports/{event_id} (all_entries with S.No), GET /api/dashboard/{event_id} (guest_limit field)."
+    - agent: "testing"
+      message: "✅ ALL UPDATED BACKEND FEATURES TESTED SUCCESSFULLY (8/8 tests passed, 100% success rate): 1) Instant Login (Firebase removed) - working perfectly with test credentials. 2) Event Creation with Extended Fields - all required fields present and working. 3) Gift Entry Auto-Increment S.No - MongoDB counters working correctly, sequential S.No (1,2,3). 4) Reports with All Entries - returns complete all_entries array with S.No. 5) Dashboard with Guest Limit - guest_limit field present. 6) Gift List sorted by S.No - proper descending sort. 7) PDF Export with S.No - generates valid base64 PDF. 8) Excel Export with S.No - generates valid base64 Excel. All endpoints tested with real data and working as expected."
+
+  - task: "Updated Event Creation with Extended Fields"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "CreateEventRequest now accepts event_type, family_head_name, bride_name, groom_name, event_person_name, phone_number, email, address, couple_photo, qr_code, user_id fields. Firebase removed."
+        - working: true
+          agent: "testing"
+          comment: "✅ Event creation with extended fields working perfectly. All required fields present: event_type, family_head_name, bride_name, groom_name, phone_number, email, address, code, guest_count, guest_limit. Created test event 'Divya & Suresh Wedding' successfully."
+
+  - task: "Gift Entry Auto-Increment S.No"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Each gift entry now gets an auto-incrementing S.No per event. Uses MongoDB counters collection. Gift also includes 'area' field."
+        - working: true
+          agent: "testing"
+          comment: "✅ Auto-increment S.No working perfectly. Created 3 test gifts with correct sequential S.No (1, 2, 3). Area field properly included. MongoDB counters collection functioning correctly."
+
+  - task: "Reports with All Entries and S.No"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "GET /api/reports/{event_id} now returns 'all_entries' array with s_no, guest_name, area, amount, payment_mode, side, gift_type, timestamp."
+        - working: true
+          agent: "testing"
+          comment: "✅ Reports with all_entries working perfectly. Returns complete array with s_no, guest_name, area, amount, payment_mode, side, gift_type, timestamp for all 3 test entries. Proper sorting by S.No."
+
+  - task: "Instant Login (Firebase Removed)"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Firebase imports completely removed. Only instant login remains. OTP endpoints removed."
+        - working: true
+          agent: "testing"
+          comment: "✅ Instant login working perfectly. Firebase completely removed. POST /api/auth/instant-login accepts phone, name, role and returns user with _id, token. No OTP required. Test credentials (+919999999999, Test Admin, admin) working correctly."
+
+  - task: "Dashboard with Guest Limit"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Dashboard with guest_limit working perfectly. GET /api/dashboard/{event_id} returns guest_limit field (500), total_guests (3), total_cash (₹3,132), and all other stats correctly."
+
+  - task: "Gift List Sorted by S.No"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Gift list sorting by S.No working perfectly. GET /api/gifts/{event_id} returns gifts sorted by s_no in descending order. All gifts have s_no field properly populated."
+
+  - task: "PDF Export with S.No"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PDF export with S.No working perfectly. GET /api/export/pdf/{event_id} generates valid base64 PDF data (2600 chars). Includes S.No column in export."
+
+  - task: "Excel Export with S.No"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Excel export with S.No working perfectly. GET /api/export/excel/{event_id} generates valid base64 Excel data (7020 chars). Includes S.No column in export with proper formatting."

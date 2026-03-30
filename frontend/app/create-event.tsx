@@ -11,11 +11,13 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../constants/theme';
 
@@ -33,8 +35,16 @@ const EVENT_TYPES = [
   { label: 'Half Saree', value: 'halfsaree' },
 ];
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 export default function CreateEvent() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, login } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +60,27 @@ export default function CreateEvent() {
   const [address, setAddress] = useState('');
   const [couplePhoto, setCouplePhoto] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
+
+  // Date picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i);
+
+  const getDaysArray = () => {
+    const maxDays = DAYS_IN_MONTH[selectedMonth] || 31;
+    return Array.from({ length: maxDays }, (_, i) => i + 1);
+  };
+
+  const handleDateConfirm = () => {
+    const day = String(selectedDay).padStart(2, '0');
+    const month = String(selectedMonth + 1).padStart(2, '0');
+    const dateStr = `${day}/${month}/${selectedYear}`;
+    setEventDate(dateStr);
+    setShowDatePicker(false);
+  };
 
   const pickImage = async (type: 'couple' | 'qr') => {
     try {
@@ -87,12 +118,10 @@ export default function CreateEvent() {
       Alert.alert('Required Field', 'Please select event type');
       return false;
     }
-
     if (!familyHeadName.trim()) {
       Alert.alert('Required Field', 'Please enter family head/organizer name');
       return false;
     }
-
     if (eventType === 'wedding') {
       if (!brideName.trim() || !groomName.trim()) {
         Alert.alert('Required Field', 'Please enter bride and groom names');
@@ -104,34 +133,27 @@ export default function CreateEvent() {
         return false;
       }
     }
-
     if (!eventDate.trim()) {
-      Alert.alert('Required Field', 'Please enter event date');
+      Alert.alert('Required Field', 'Please select event date');
       return false;
     }
-
     if (!phoneNumber.trim()) {
       Alert.alert('Required Field', 'Please enter phone number');
       return false;
     }
-
     if (!email.trim()) {
       Alert.alert('Required Field', 'Please enter email address');
       return false;
     }
-
     if (!address.trim()) {
       Alert.alert('Required Field', 'Please enter address');
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
@@ -154,17 +176,13 @@ export default function CreateEvent() {
         address: address,
         couple_photo: couplePhoto,
         qr_code: qrCode,
+        user_id: user?._id,
       };
 
       const response = await fetch(`${BACKEND_URL}/api/events`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...eventData,
-          user_id: user?._id,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
       });
 
       const data = await response.json();
@@ -176,16 +194,11 @@ export default function CreateEvent() {
           await login(updatedUser);
         }
 
-        Alert.alert(
-          'Success!',
-          'Event created successfully',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.back(),
-            },
-          ]
-        );
+        // Navigate to Welcome page
+        router.replace({ 
+          pathname: '/welcome', 
+          params: { eventId: data.event._id } 
+        });
       } else {
         throw new Error(data.message || 'Failed to create event');
       }
@@ -200,7 +213,7 @@ export default function CreateEvent() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top }]}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -210,7 +223,11 @@ export default function CreateEvent() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroIcon}>
@@ -241,7 +258,7 @@ export default function CreateEvent() {
             </Picker>
           </View>
 
-          {eventType && (
+          {eventType ? (
             <>
               {/* Contact Information */}
               <View style={styles.sectionDivider} />
@@ -293,14 +310,21 @@ export default function CreateEvent() {
                 </>
               )}
 
+              {/* Event Date with Calendar Picker */}
               <Text style={styles.label}>Event Date *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="DD/MM/YYYY"
-                value={eventDate}
-                onChangeText={setEventDate}
-                placeholderTextColor={theme.colors.textSecondary}
-              />
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Ionicons name="calendar" size={22} color={theme.colors.secondary} />
+                <Text style={[
+                  styles.dateText,
+                  !eventDate && { color: theme.colors.textSecondary }
+                ]}>
+                  {eventDate || 'Tap to select date'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
 
               <Text style={styles.label}>Phone Number *</Text>
               <TextInput
@@ -338,7 +362,6 @@ export default function CreateEvent() {
               <View style={styles.sectionDivider} />
               <Text style={styles.sectionTitle}>Media Uploads</Text>
 
-              {/* Couple/Event Photo */}
               <Text style={styles.label}>
                 {eventType === 'wedding' ? 'Upload Couple Photo' : 'Upload Photo'}
               </Text>
@@ -352,15 +375,14 @@ export default function CreateEvent() {
                   <>
                     <Ionicons name="image-outline" size={40} color={theme.colors.primary} />
                     <Text style={styles.uploadText}>Tap to upload photo</Text>
-                    <Text style={styles.uploadHint}>JPG, PNG, WEBP — max 5MB</Text>
+                    <Text style={styles.uploadHint}>JPG, PNG, WEBP - max 5MB</Text>
                   </>
                 )}
               </TouchableOpacity>
 
-              {/* QR Code */}
               <Text style={styles.label}>Upload Your QR Code *</Text>
               <Text style={styles.hint}>
-                Upload your UPI QR code (Paytm / PhonePe / Google Pay supported). JPG, PNG, WEBP — max 3MB.
+                Upload your UPI QR code (Paytm / PhonePe / Google Pay supported). JPG, PNG, WEBP - max 3MB.
               </Text>
               <TouchableOpacity
                 style={styles.uploadButton}
@@ -372,16 +394,16 @@ export default function CreateEvent() {
                   <>
                     <Ionicons name="qr-code-outline" size={40} color={theme.colors.secondary} />
                     <Text style={styles.uploadText}>Tap to upload QR code</Text>
-                    <Text style={styles.uploadHint}>JPG, PNG, WEBP — max 3MB</Text>
+                    <Text style={styles.uploadHint}>JPG, PNG, WEBP - max 3MB</Text>
                   </>
                 )}
               </TouchableOpacity>
             </>
-          )}
+          ) : null}
         </View>
 
         {/* Submit Button */}
-        {eventType && (
+        {eventType ? (
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -396,10 +418,122 @@ export default function CreateEvent() {
               </>
             )}
           </TouchableOpacity>
-        )}
+        ) : null}
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.dateModalOverlay}>
+          <View style={styles.dateModalContent}>
+            <View style={styles.dateModalHeader}>
+              <Text style={styles.dateModalTitle}>Select Event Date</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Ionicons name="close" size={28} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Date Display */}
+            <View style={styles.dateDisplayRow}>
+              <Text style={styles.dateDisplay}>
+                {selectedDay} {MONTHS[selectedMonth]} {selectedYear}
+              </Text>
+            </View>
+
+            {/* Pickers */}
+            <View style={styles.datePickerRow}>
+              {/* Day Picker */}
+              <View style={styles.datePickerCol}>
+                <Text style={styles.datePickerLabel}>Day</Text>
+                <ScrollView style={styles.datePickerScroll} showsVerticalScrollIndicator={false}>
+                  {getDaysArray().map((day) => (
+                    <TouchableOpacity
+                      key={day}
+                      style={[
+                        styles.datePickerItem,
+                        selectedDay === day && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setSelectedDay(day)}
+                    >
+                      <Text
+                        style={[
+                          styles.datePickerItemText,
+                          selectedDay === day && styles.datePickerItemTextSelected,
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Month Picker */}
+              <View style={[styles.datePickerCol, { flex: 2 }]}>
+                <Text style={styles.datePickerLabel}>Month</Text>
+                <ScrollView style={styles.datePickerScroll} showsVerticalScrollIndicator={false}>
+                  {MONTHS.map((month, idx) => (
+                    <TouchableOpacity
+                      key={month}
+                      style={[
+                        styles.datePickerItem,
+                        selectedMonth === idx && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setSelectedMonth(idx)}
+                    >
+                      <Text
+                        style={[
+                          styles.datePickerItemText,
+                          selectedMonth === idx && styles.datePickerItemTextSelected,
+                        ]}
+                      >
+                        {month}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Year Picker */}
+              <View style={styles.datePickerCol}>
+                <Text style={styles.datePickerLabel}>Year</Text>
+                <ScrollView style={styles.datePickerScroll} showsVerticalScrollIndicator={false}>
+                  {years.map((year) => (
+                    <TouchableOpacity
+                      key={year}
+                      style={[
+                        styles.datePickerItem,
+                        selectedYear === year && styles.datePickerItemSelected,
+                      ]}
+                      onPress={() => setSelectedYear(year)}
+                    >
+                      <Text
+                        style={[
+                          styles.datePickerItemText,
+                          selectedYear === year && styles.datePickerItemTextSelected,
+                        ]}
+                      >
+                        {year}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Confirm Button */}
+            <TouchableOpacity style={styles.dateConfirmButton} onPress={handleDateConfirm}>
+              <Text style={styles.dateConfirmText}>Confirm Date</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -415,8 +549,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: theme.colors.secondary,
     paddingHorizontal: theme.spacing.md,
-    paddingTop: 50,
-    paddingBottom: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
   },
   backButton: {
     padding: theme.spacing.sm,
@@ -513,6 +646,21 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: 'top',
   },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.cardBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  dateText: {
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+  },
   pickerContainer: {
     backgroundColor: theme.colors.cardBackground,
     borderWidth: 1,
@@ -573,5 +721,89 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.lg,
     fontWeight: '600',
     marginRight: theme.spacing.sm,
+  },
+  // Date Modal Styles
+  dateModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  dateModalContent: {
+    backgroundColor: theme.colors.white,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    maxHeight: '70%',
+  },
+  dateModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  dateModalTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  dateDisplayRow: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+    backgroundColor: '#FFF9E6',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  dateDisplay: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: 'bold',
+    color: theme.colors.secondary,
+  },
+  datePickerRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    height: 200,
+  },
+  datePickerCol: {
+    flex: 1,
+  },
+  datePickerLabel: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xs,
+    textTransform: 'uppercase',
+  },
+  datePickerScroll: {
+    flex: 1,
+  },
+  datePickerItem: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.sm,
+    marginBottom: 2,
+  },
+  datePickerItemSelected: {
+    backgroundColor: theme.colors.secondary,
+  },
+  datePickerItemText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+  },
+  datePickerItemTextSelected: {
+    color: theme.colors.white,
+    fontWeight: 'bold',
+  },
+  dateConfirmButton: {
+    backgroundColor: theme.colors.secondary,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    marginTop: theme.spacing.lg,
+  },
+  dateConfirmText: {
+    color: theme.colors.white,
+    fontSize: theme.fontSize.lg,
+    fontWeight: '600',
   },
 });

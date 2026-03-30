@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
 import { Picker } from '@react-native-picker/picker';
@@ -22,6 +23,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Gifts() {
   const { user } = useAuth();
+  const router = useRouter();
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,7 +230,16 @@ export default function Gifts() {
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => setShowAddModal(true)}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => {
+          if (user?.current_event_id) {
+            router.push({ pathname: '/gift-entry', params: { eventId: user.current_event_id } });
+          } else {
+            setShowAddModal(true);
+          }
+        }}
+      >
         <Ionicons name="add" size={32} color={theme.colors.white} />
       </TouchableOpacity>
 
