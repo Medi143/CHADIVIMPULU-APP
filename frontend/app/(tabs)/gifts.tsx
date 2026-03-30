@@ -22,8 +22,9 @@ import { Picker } from '@react-native-picker/picker';
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Gifts() {
-  const { user } = useAuth();
+  const { user, activeEvent } = useAuth();
   const router = useRouter();
+  const eventId = activeEvent?._id || user?.current_event_id;
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,14 +42,14 @@ export default function Gifts() {
   });
 
   useEffect(() => {
-    if (user?.current_event_id) {
+    if (eventId) {
       loadGifts();
     }
-  }, [user, searchQuery, filterSide]);
+  }, [eventId, searchQuery, filterSide]);
 
   const loadGifts = async () => {
     try {
-      let url = `${BACKEND_URL}/api/gifts/${user?.current_event_id}`;
+      let url = `${BACKEND_URL}/api/gifts/${eventId}`;
       const params = [];
       if (filterSide) params.push(`side=${filterSide}`);
       if (searchQuery) params.push(`search=${searchQuery}`);
@@ -86,7 +87,7 @@ export default function Gifts() {
     try {
       const payload = {
         ...formData,
-        event_id: user?.current_event_id,
+        event_id: eventId,
         added_by: user?.name || user?.phone,
         amount: formData.gift_type === 'cash' ? parseFloat(formData.amount) : null,
       };
@@ -163,7 +164,7 @@ export default function Gifts() {
     </View>
   );
 
-  if (!user?.current_event_id) {
+  if (!eventId) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="calendar-outline" size={80} color={theme.colors.textSecondary} />
@@ -233,8 +234,8 @@ export default function Gifts() {
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => {
-          if (user?.current_event_id) {
-            router.push({ pathname: '/gift-entry', params: { eventId: user.current_event_id } });
+          if (eventId) {
+            router.push({ pathname: '/gift-entry', params: { eventId: eventId } });
           } else {
             setShowAddModal(true);
           }

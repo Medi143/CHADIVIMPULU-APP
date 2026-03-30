@@ -45,7 +45,7 @@ const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 export default function CreateEvent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, login } = useAuth();
+  const { user, login, setActiveEvent } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -188,6 +188,9 @@ export default function CreateEvent() {
       const data = await response.json();
 
       if (data.success) {
+        // Set active event
+        await setActiveEvent(data.event);
+        
         // Update user's current event
         if (user) {
           const updatedUser = { ...user, current_event_id: data.event._id };
