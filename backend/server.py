@@ -477,100 +477,202 @@ async def get_analytics_report(event_id: str):
 async def export_pdf(event_id: str):
     try:
         event = await db.events.find_one({"_id": ObjectId(event_id)})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
         gifts = await db.gift_entries.find({"event_id": event_id}).sort("s_no", 1).to_list(10000)
         
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
+        width_page = letter[0]
         
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(50, 750, f"Wedding Gift Report - {event.get('name', 'Event')}")
+        # === HEADER ===
+        p.setFont("Helvetica-Bold", 20)
+        p.drawCentredString(width_page / 2, 750, "Chadivimpulu - Gift Report")
+        
+        p.setFont("Helvetica-Bold", 14)
+        p.drawCentredString(width_page / 2, 725, event.get('name', 'Event'))
+        
         p.setFont("Helvetica", 10)
-        p.drawString(50, 730, f"Date: {event.get('date', '')}")
-        p.drawString(50, 715, f"Location: {event.get('location', '')}")
+        p.drawString(50, 700, f"Event Date: {event.get('date', 'N/A')}")
+        p.drawString(300, 700, f"Location: {event.get('location', 'N/A')}")
+        p.drawString(50, 685, f"Organizer: {event.get('family_head_name', 'N/A')}")
+        p.drawString(300, 685, f"Event Type: {event.get('event_type', 'N/A').title()}")
         
+        # === SUMMARY ===
         total_cash = sum(g.get("amount", 0) or 0 for g in gifts if g.get("gift_type") == "cash")
-        p.setFont("Helvetica-Bold", 12)
-        p.drawString(50, 690, f"Total Guests: {len(gifts)}")
-        p.drawString(250, 690, f"Total Cash: Rs.{total_cash:,.2f}")
+        bride_gifts = [g for g in gifts if g.get("side") == "bride"]
+        groom_gifts = [g for g in gifts if g.get("side") == "groom"]
+        bride_cash = sum(g.get("amount", 0) or 0 for g in bride_gifts if g.get("gift_type") == "cash")
+        groom_cash = sum(g.get("amount", 0) or 0 for g in groom_gifts if g.get("gift_type") == "cash")
+        cash_count = sum(1 for g in gifts if g.get("payment_mode") == "cash")
+        upi_count = sum(1 for g in gifts if g.get("payment_mode") == "upi")
         
-        y = 660
+        # Divider line
+        p.setStrokeColor(colors.Color(0.8, 0.8, 0.8))
+        p.line(50, 670, width_page - 50, 670)
+        
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, 650, "Summary")
+        
+        p.setFont("Helvetica", 10)
+        p.drawString(50, 632, f"Total Guests: {len(gifts)}")
+        p.drawString(200, 632, f"Total Cash: Rs.{total_cash:,.2f}")
+        p.drawString(400, 632, f"Items: {sum(1 for g in gifts if g.get('gift_type') == 'item')}")
+        
+        p.drawString(50, 616, f"Bride Side: {len(bride_gifts)} guests, Rs.{bride_cash:,.2f}")
+        p.drawString(300, 616, f"Groom Side: {len(groom_gifts)} guests, Rs.{groom_cash:,.2f}")
+        
+        p.drawString(50, 600, f"Cash Payments: {cash_count}")
+        p.drawString(200, 600, f"UPI Payments: {upi_count}")
+        
+        # Divider line
+        p.line(50, 588, width_page - 50, 588)
+        
+        # === TABLE HEADER ===
+        y = 570
+        p.setFillColor(colors.Color(0.16, 0.24, 0.38))
+        p.rect(45, y - 5, width_page - 90, 20, fill=True, stroke=False)
+        
+        p.setFillColor(colors.white)
         p.setFont("Helvetica-Bold", 9)
         p.drawString(50, y, "S.No")
         p.drawString(80, y, "Guest Name")
-        p.drawString(180, y, "Area")
-        p.drawString(260, y, "Side")
-        p.drawString(310, y, "Amount")
-        p.drawString(380, y, "Payment")
-        p.drawString(440, y, "Date")
+        p.drawString(200, y, "Area")
+        p.drawString(290, y, "Side")
+        p.drawString(340, y, "Amount")
+        p.drawString(420, y, "Payment")
+        p.drawString(490, y, "Date")
         
+        p.setFillColor(colors.black)
         p.setFont("Helvetica", 8)
-        y -= 20
-        for gift in gifts:
+        y -= 22
+        
+        for idx, gift in enumerate(gifts):
             if y < 50:
                 p.showPage()
+                p.setFont("Helvetica", 8)
                 y = 750
             
+            # Alternate row color
+            if idx % 2 == 0:
+                p.setFillColor(colors.Color(0.96, 0.96, 0.96))
+                p.rect(45, y - 4, width_page - 90, 16, fill=True, stroke=False)
+                p.setFillColor(colors.black)
+            
             p.drawString(50, y, str(gift.get("s_no", "")))
-            p.drawString(80, y, str(gift.get("guest_name", ""))[:15])
-            p.drawString(180, y, str(gift.get("area", ""))[:12])
-            p.drawString(260, y, str(gift.get("side", ""))[:10])
+            p.drawString(80, y, str(gift.get("guest_name", ""))[:18])
+            p.drawString(200, y, str(gift.get("area", ""))[:14])
+            p.drawString(290, y, str(gift.get("side", "")).title()[:10])
             if gift.get("gift_type") == "cash":
-                p.drawString(310, y, f"Rs.{gift.get('amount', 0):,.2f}")
+                p.drawString(340, y, f"Rs.{gift.get('amount', 0):,.2f}")
             else:
-                p.drawString(310, y, str(gift.get("item_description", ""))[:12])
-            p.drawString(380, y, str(gift.get("payment_mode", ""))[:10])
+                p.drawString(340, y, str(gift.get("item_description", "Item"))[:12])
+            p.drawString(420, y, str(gift.get("payment_mode", "")).upper()[:10])
             ts = gift.get("timestamp")
             if ts:
-                p.drawString(440, y, ts.strftime("%d/%m/%Y") if hasattr(ts, 'strftime') else str(ts)[:10])
-            y -= 15
+                p.drawString(490, y, ts.strftime("%d/%m/%Y") if hasattr(ts, 'strftime') else str(ts)[:10])
+            y -= 16
         
         p.save()
         pdf_base64 = base64.b64encode(buffer.getvalue()).decode()
-        return {"success": True, "pdf_data": pdf_base64}
+        
+        # Generate safe file name
+        event_name = event.get('name', 'Event').replace(' ', '_')[:30]
+        return {"success": True, "pdf_data": pdf_base64, "file_name": f"Chadivimpulu_{event_name}.pdf"}
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error exporting PDF: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/export/excel/{event_id}")
 async def export_excel(event_id: str):
     try:
-        _event = await db.events.find_one({"_id": ObjectId(event_id)})
+        event = await db.events.find_one({"_id": ObjectId(event_id)})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
         gifts = await db.gift_entries.find({"event_id": event_id}).sort("s_no", 1).to_list(10000)
         
         wb = Workbook()
-        ws = wb.active
-        ws.title = "Gift Entries"
         
-        headers = ["S.No", "Guest Name", "Area", "Mobile", "Side", "Gift Type", "Amount", "Item Description", "Payment Mode", "Notes", "Added By", "Timestamp"]
-        ws.append(headers)
+        # === Sheet 1: Summary ===
+        ws_summary = wb.active
+        ws_summary.title = "Summary"
         
-        header_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
-        header_font = Font(bold=True)
-        for cell in ws[1]:
+        title_font = Font(bold=True, size=14)
+        header_fill = PatternFill(start_color="1B3A61", end_color="1B3A61", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        gold_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+        gold_font = Font(bold=True)
+        
+        ws_summary.append(["Chadivimpulu - Gift Report"])
+        ws_summary['A1'].font = title_font
+        ws_summary.append([])
+        ws_summary.append(["Event Name:", event.get('name', '')])
+        ws_summary.append(["Event Date:", event.get('date', '')])
+        ws_summary.append(["Location:", event.get('location', '')])
+        ws_summary.append(["Organizer:", event.get('family_head_name', '')])
+        ws_summary.append(["Event Type:", event.get('event_type', '').title()])
+        ws_summary.append([])
+        
+        total_cash = sum(g.get("amount", 0) or 0 for g in gifts if g.get("gift_type") == "cash")
+        bride_gifts = [g for g in gifts if g.get("side") == "bride"]
+        groom_gifts = [g for g in gifts if g.get("side") == "groom"]
+        bride_cash = sum(g.get("amount", 0) or 0 for g in bride_gifts if g.get("gift_type") == "cash")
+        groom_cash = sum(g.get("amount", 0) or 0 for g in groom_gifts if g.get("gift_type") == "cash")
+        
+        ws_summary.append(["Total Guests:", len(gifts)])
+        ws_summary.append(["Total Cash:", f"Rs.{total_cash:,.2f}"])
+        ws_summary.append(["Bride Side:", f"{len(bride_gifts)} guests, Rs.{bride_cash:,.2f}"])
+        ws_summary.append(["Groom Side:", f"{len(groom_gifts)} guests, Rs.{groom_cash:,.2f}"])
+        
+        for cell in ['A3', 'A4', 'A5', 'A6', 'A7', 'A9', 'A10', 'A11', 'A12']:
+            ws_summary[cell].font = Font(bold=True)
+        
+        ws_summary.column_dimensions['A'].width = 18
+        ws_summary.column_dimensions['B'].width = 40
+        
+        # === Sheet 2: Gift Entries ===
+        ws_entries = wb.create_sheet("Gift Entries")
+        
+        headers = ["S.No", "Name", "Area", "Amount", "Payment Mode", "Side", "Date"]
+        ws_entries.append(headers)
+        
+        for cell in ws_entries[1]:
             cell.fill = header_fill
             cell.font = header_font
         
         for gift in gifts:
-            ws.append([
+            ts = gift.get("timestamp")
+            date_str = ""
+            if ts:
+                date_str = ts.strftime("%d/%m/%Y %H:%M") if hasattr(ts, 'strftime') else str(ts)[:16]
+            
+            ws_entries.append([
                 gift.get("s_no", ""),
                 gift.get("guest_name", ""),
                 gift.get("area", ""),
-                gift.get("mobile", ""),
-                gift.get("side", ""),
-                gift.get("gift_type", ""),
-                gift.get("amount", "") if gift.get("gift_type") == "cash" else "",
-                gift.get("item_description", ""),
-                gift.get("payment_mode", ""),
-                gift.get("notes", ""),
-                gift.get("added_by", ""),
-                str(gift.get("timestamp", ""))
+                gift.get("amount", 0) if gift.get("gift_type") == "cash" else 0,
+                gift.get("payment_mode", "").upper(),
+                gift.get("side", "").title(),
+                date_str,
             ])
+        
+        # Auto-width columns
+        for col_letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
+            ws_entries.column_dimensions[col_letter].width = 16
+        ws_entries.column_dimensions['B'].width = 24
         
         buffer = io.BytesIO()
         wb.save(buffer)
         excel_base64 = base64.b64encode(buffer.getvalue()).decode()
         
-        return {"success": True, "excel_data": excel_base64}
+        event_name = event.get('name', 'Event').replace(' ', '_')[:30]
+        return {"success": True, "excel_data": excel_base64, "file_name": f"Chadivimpulu_{event_name}.xlsx"}
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error exporting Excel: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 # ==================== STAFF MANAGEMENT ENDPOINTS ====================

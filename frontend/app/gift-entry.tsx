@@ -21,12 +21,12 @@ import { theme } from '../constants/theme';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-const PREDEFINED_AMOUNTS = [116, 216, 516, 1016, 2016];
+const PREDEFINED_AMOUNTS = [116, 216, 516, 1016, 2016, 5016, 10016];
 
 export default function GiftEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, activeEvent } = useAuth();
   const params = useLocalSearchParams<{ eventId: string }>();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -38,15 +38,16 @@ export default function GiftEntryScreen() {
   const [guestName, setGuestName] = useState('');
   const [area, setArea] = useState('');
   const [amount, setAmount] = useState('');
+  const [side, setSide] = useState<'bride' | 'groom'>('bride');
   const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | null>(null);
 
   useEffect(() => {
-    const eventId = params.eventId || user?.current_event_id;
+    const eventId = params.eventId || activeEvent?._id || user?.current_event_id;
     if (eventId) {
       loadEvent(eventId);
       loadGuestCount(eventId);
     }
-  }, [params.eventId, user?.current_event_id]);
+  }, [params.eventId, activeEvent?._id, user?.current_event_id]);
 
   const loadEvent = async (eventId: string) => {
     try {
@@ -102,12 +103,12 @@ export default function GiftEntryScreen() {
     Keyboard.dismiss();
 
     try {
-      const eventId = params.eventId || user?.current_event_id;
+      const eventId = params.eventId || activeEvent?._id || user?.current_event_id;
       const payload = {
         event_id: eventId,
         guest_name: guestName.trim(),
         area: area.trim(),
-        side: 'bride',
+        side: side,
         gift_type: 'cash',
         amount: parseFloat(amount),
         payment_mode: mode,
@@ -159,6 +160,7 @@ export default function GiftEntryScreen() {
     setAmount('');
     setSelectedAmount(null);
     setPaymentMode(null);
+    setSide('bride');
   };
 
   return (
@@ -234,8 +236,13 @@ export default function GiftEntryScreen() {
               keyboardType="numeric"
             />
 
-            {/* Predefined Amount Buttons */}
-            <View style={styles.amountButtonsRow}>
+            {/* Predefined Amount Buttons - Horizontal Scroll */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.amountScrollRow}
+              contentContainerStyle={styles.amountScrollContent}
+            >
               {PREDEFINED_AMOUNTS.map((val) => (
                 <TouchableOpacity
                   key={val}
@@ -251,10 +258,46 @@ export default function GiftEntryScreen() {
                       selectedAmount === val && styles.amountButtonTextSelected,
                     ]}
                   >
-                    ₹{val}
+                    {'\u20b9'}{val.toLocaleString()}
                   </Text>
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+
+          {/* Side Selector */}
+          <View style={styles.fieldContainer}>
+            <View style={styles.labelRow}>
+              <Ionicons name="people" size={18} color={theme.colors.secondary} />
+              <Text style={styles.label}>Side</Text>
+            </View>
+            <View style={styles.sideRow}>
+              <TouchableOpacity
+                style={[styles.sideButton, side === 'bride' && styles.sideButtonActive]}
+                onPress={() => setSide('bride')}
+              >
+                <Ionicons
+                  name="woman"
+                  size={18}
+                  color={side === 'bride' ? theme.colors.white : '#E91E63'}
+                />
+                <Text style={[styles.sideButtonText, side === 'bride' && styles.sideButtonTextActive]}>
+                  Bride
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sideButton, side === 'groom' && styles.sideButtonActiveGroom]}
+                onPress={() => setSide('groom')}
+              >
+                <Ionicons
+                  name="man"
+                  size={18}
+                  color={side === 'groom' ? theme.colors.white : '#1565C0'}
+                />
+                <Text style={[styles.sideButtonText, side === 'groom' && styles.sideButtonTextActive]}>
+                  Groom
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -418,16 +461,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#D84315',
   },
-  amountButtonsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
+  amountScrollRow: {
     marginTop: theme.spacing.md,
   },
+  amountScrollContent: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingRight: theme.spacing.md,
+  },
   amountButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 24,
     borderWidth: 1.5,
     borderColor: '#FF8A65',
     backgroundColor: '#FFF3E0',
@@ -442,6 +487,38 @@ const styles = StyleSheet.create({
     color: '#D84315',
   },
   amountButtonTextSelected: {
+    color: theme.colors.white,
+  },
+  sideRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  sideButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F9F9F9',
+    gap: theme.spacing.sm,
+  },
+  sideButtonActive: {
+    backgroundColor: '#E91E63',
+    borderColor: '#E91E63',
+  },
+  sideButtonActiveGroom: {
+    backgroundColor: '#1565C0',
+    borderColor: '#1565C0',
+  },
+  sideButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  sideButtonTextActive: {
     color: theme.colors.white,
   },
   divider: {

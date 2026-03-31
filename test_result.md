@@ -280,7 +280,54 @@ agent_communication:
     - agent: "testing"
       message: "Comprehensive backend testing completed successfully. All 17 tests passed with 100% success rate."
     - agent: "main"
-      message: "Major backend refactor completed: 1) Removed Firebase dependency (instant login only). 2) Updated CreateEventRequest to accept all new fields (event_type, bride_name, groom_name, couple_photo, qr_code, etc.). 3) Added auto-increment S.No for gift entries using MongoDB counters collection. 4) Gift entries now include 'area' field and S.No. 5) Reports API now returns 'all_entries' with S.No for tabular display. 6) Dashboard returns guest_limit. Please retest all backend endpoints especially: POST /api/events (new fields), POST /api/gifts (auto S.No), GET /api/reports/{event_id} (all_entries with S.No), GET /api/dashboard/{event_id} (guest_limit field)."
+      message: "Major update: 1) Gift entry now includes Side selector (bride/groom). 2) PDF export improved with event details header, summary (bride/groom breakdown), colored table with alternating rows, file named as Chadivimpulu_<EventName>.pdf. 3) Excel export improved with Summary sheet + Gift Entries sheet, proper columns (Name, Area, Amount, Payment Mode, Side, Date), file named Chadivimpulu_<EventName>.xlsx. 4) All data stored in MongoDB. Please test: POST /api/gifts with side field, GET /api/export/pdf/{event_id} for improved PDF, GET /api/export/excel/{event_id} for improved Excel."
+    - agent: "testing"
+      message: "✅ COMPREHENSIVE FLOW TESTING COMPLETED (8/8 tests passed, 100% success rate): Full data flow test executed successfully with instant login (phone: 9876543210, name: Flow Test User, role: admin) → Event creation with extended fields → 3 gift entries with different sides (bride/groom), amounts (116, 516, 2016), payment modes (cash/upi) → All data correctly linked → PDF export generates valid base64 with proper file naming (Chadivimpulu_*.pdf) → Excel export generates valid base64 with proper file naming (Chadivimpulu_*.xlsx) → Reports endpoint returns all_entries with s_no, side, payment_mode fields. All critical endpoints working perfectly."
+
+  - task: "Improved PDF Export with Event Details and Summary"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "PDF now includes: event header with name/date/location/organizer, summary with bride/groom side breakdown, colored table header, alternating row colors, proper file naming."
+        - working: true
+          agent: "testing"
+          comment: "✅ PDF export working perfectly. Generated valid base64 PDF data (2278 bytes, 3040 chars base64). File naming follows pattern 'Chadivimpulu_*.pdf'. PDF header validation passed. Includes event details, summary, and proper formatting."
+
+  - task: "Improved Excel Export with Summary Sheet"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Excel now has 2 sheets: Summary (event details + totals) and Gift Entries (S.No, Name, Area, Amount, Payment Mode, Side, Date). Header styled with dark blue fill and white text."
+        - working: true
+          agent: "testing"
+          comment: "✅ Excel export working perfectly. Generated valid base64 Excel data (6031 bytes, 8044 chars base64). File naming follows pattern 'Chadivimpulu_*.xlsx'. Excel header validation passed (ZIP format). Includes 2 sheets with proper formatting."
+
+  - task: "Gift Entry with Side Selection"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "POST /api/gifts now accepts and stores 'side' field (bride/groom). Frontend has Bride/Groom toggle buttons."
+        - working: true
+          agent: "testing"
+          comment: "✅ Gift entry with side selection working perfectly. Created 3 test gifts with different sides (bride/groom), amounts (116, 516, 2016), and payment modes (cash/upi). Side field stored correctly and verified in gift list retrieval. Auto-increment S.No working (1,2,3)."
     - agent: "testing"
       message: "✅ ALL UPDATED BACKEND FEATURES TESTED SUCCESSFULLY (8/8 tests passed, 100% success rate): 1) Instant Login (Firebase removed) - working perfectly with test credentials. 2) Event Creation with Extended Fields - all required fields present and working. 3) Gift Entry Auto-Increment S.No - MongoDB counters working correctly, sequential S.No (1,2,3). 4) Reports with All Entries - returns complete all_entries array with S.No. 5) Dashboard with Guest Limit - guest_limit field present. 6) Gift List sorted by S.No - proper descending sort. 7) PDF Export with S.No - generates valid base64 PDF. 8) Excel Export with S.No - generates valid base64 Excel. All endpoints tested with real data and working as expected."
 

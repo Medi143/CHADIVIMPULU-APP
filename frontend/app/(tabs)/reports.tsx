@@ -57,7 +57,7 @@ export default function Reports() {
       const response = await fetch(`${BACKEND_URL}/api/export/pdf/${eventId}`);
       const data = await response.json();
       if (data.success && data.pdf_data) {
-        const fileName = `Chadivimpulu_Report_${Date.now()}.pdf`;
+        const fileName = data.file_name || `Chadivimpulu_Report.pdf`;
         const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, data.pdf_data, {
           encoding: FileSystem.EncodingType.Base64,
@@ -68,17 +68,16 @@ export default function Reports() {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'application/pdf',
             dialogTitle: 'Save PDF Report',
+            UTI: 'com.adobe.pdf',
           });
-          Alert.alert('Success', 'PDF exported successfully!');
-        } else {
-          Alert.alert('Info', `PDF saved to: ${fileUri}`);
         }
+        Alert.alert('PDF Exported', `File: ${fileName}`);
       } else {
         Alert.alert('Error', 'Failed to generate PDF');
       }
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      Alert.alert('Error', 'Failed to export PDF');
+      Alert.alert('Error', 'Failed to export PDF. Please try again.');
     } finally {
       setExporting(null);
     }
@@ -90,7 +89,7 @@ export default function Reports() {
       const response = await fetch(`${BACKEND_URL}/api/export/excel/${eventId}`);
       const data = await response.json();
       if (data.success && data.excel_data) {
-        const fileName = `Chadivimpulu_Report_${Date.now()}.xlsx`;
+        const fileName = data.file_name || `Chadivimpulu_Report.xlsx`;
         const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, data.excel_data, {
           encoding: FileSystem.EncodingType.Base64,
@@ -102,16 +101,14 @@ export default function Reports() {
             mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             dialogTitle: 'Save Excel Report',
           });
-          Alert.alert('Success', 'Excel exported successfully!');
-        } else {
-          Alert.alert('Info', `Excel saved to: ${fileUri}`);
         }
+        Alert.alert('Excel Exported', `File: ${fileName}`);
       } else {
         Alert.alert('Error', 'Failed to generate Excel');
       }
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      Alert.alert('Error', 'Failed to export Excel');
+      Alert.alert('Error', 'Failed to export Excel. Please try again.');
     } finally {
       setExporting(null);
     }
