@@ -16,21 +16,10 @@ import { theme } from '../../constants/theme';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-interface DashboardStats {
-  total_guests: number;
-  total_cash: number;
-  total_items: number;
-  bride_side: { guests: number; cash: number };
-  groom_side: { guests: number; cash: number };
-  payment_modes: { cash: number; upi: number };
-  recent_entries: any[];
-}
-
 export default function Events() {
   const router = useRouter();
   const { user, activeEvent, setActiveEvent } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -48,18 +37,6 @@ export default function Events() {
         const eventsData = await eventsResponse.json();
         if (eventsData.success) {
           setEvents(eventsData.events || []);
-        }
-      }
-
-      // Load stats for active event
-      const eventId = activeEvent?._id || user?.current_event_id;
-      if (eventId) {
-        const statsResponse = await fetch(
-          `${BACKEND_URL}/api/dashboard/${eventId}`
-        );
-        const statsData = await statsResponse.json();
-        if (statsData.success) {
-          setStats(statsData.stats);
         }
       }
     } catch (error) {
@@ -101,61 +78,6 @@ export default function Events() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* Stats Summary for Active Event */}
-      {stats && (
-        <View style={styles.statsSection}>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
-              <Ionicons name="people" size={28} color="#4CAF50" />
-              <Text style={styles.statValue}>{stats.total_guests}</Text>
-              <Text style={styles.statLabel}>Total Guests</Text>
-            </View>
-
-            <View style={[styles.statCard, { backgroundColor: '#FFF3E0' }]}>
-              <Ionicons name="cash" size={28} color="#FF9800" />
-              <Text style={styles.statValue}>
-                {'\u20b9'}{stats.total_cash.toLocaleString()}
-              </Text>
-              <Text style={styles.statLabel}>Total Cash</Text>
-            </View>
-
-            <View style={[styles.statCard, { backgroundColor: '#E3F2FD' }]}>
-              <Ionicons name="gift" size={28} color="#2196F3" />
-              <Text style={styles.statValue}>{stats.total_items}</Text>
-              <Text style={styles.statLabel}>Total Items</Text>
-            </View>
-
-            <View style={[styles.statCard, { backgroundColor: '#F3E5F5' }]}>
-              <Ionicons name="card" size={28} color="#9C27B0" />
-              <Text style={styles.statValue}>{stats.payment_modes.upi}</Text>
-              <Text style={styles.statLabel}>UPI Payments</Text>
-            </View>
-          </View>
-
-          {/* Bride/Groom side comparison */}
-          <View style={styles.sideComparison}>
-            <View style={styles.sideCard}>
-              <Text style={styles.sideTitle}>Bride's Side</Text>
-              <Text style={styles.sideGuests}>
-                {stats.bride_side.guests} guests
-              </Text>
-              <Text style={styles.sideCash}>
-                {'\u20b9'}{stats.bride_side.cash.toLocaleString()}
-              </Text>
-            </View>
-            <View style={styles.sideCard}>
-              <Text style={styles.sideTitle}>Groom's Side</Text>
-              <Text style={styles.sideGuests}>
-                {stats.groom_side.guests} guests
-              </Text>
-              <Text style={styles.sideCash}>
-                {'\u20b9'}{stats.groom_side.cash.toLocaleString()}
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
-
       {/* Events List */}
       <View style={styles.eventsSection}>
         <View style={styles.sectionHeader}>
@@ -231,49 +153,6 @@ export default function Events() {
         )}
       </View>
 
-      {/* Recent Entries */}
-      {stats?.recent_entries && stats.recent_entries.length > 0 && (
-        <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Entries</Text>
-          {stats.recent_entries.slice(0, 5).map((entry: any, index: number) => (
-            <View key={index} style={styles.entryCard}>
-              <View style={styles.entryRow}>
-                <Text style={styles.entryName}>{entry.guest_name}</Text>
-                <Text style={styles.entryAmount}>
-                  {entry.gift_type === 'cash'
-                    ? `\u20b9${(entry.amount || 0).toLocaleString()}`
-                    : entry.item_description || 'Item'}
-                </Text>
-              </View>
-              <View style={styles.entryRow}>
-                <Text style={styles.entrySide}>{entry.side} side</Text>
-                <View
-                  style={[
-                    styles.entryModeBadge,
-                    {
-                      backgroundColor:
-                        entry.payment_mode === 'upi' ? '#E8F5E9' : '#FFF3E0',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.entryModeText,
-                      {
-                        color:
-                          entry.payment_mode === 'upi' ? '#4CAF50' : '#FF8C00',
-                      },
-                    ]}
-                  >
-                    {(entry.payment_mode || '').toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
-
       <View style={{ height: 30 }} />
     </ScrollView>
   );
@@ -289,61 +168,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.background,
-  },
-  statsSection: {
-    padding: theme.spacing.md,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  statCard: {
-    width: '48%',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.md,
-    marginHorizontal: '1%',
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginTop: theme.spacing.sm,
-  },
-  statLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-  },
-  sideComparison: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-  },
-  sideCard: {
-    flex: 1,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sideTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  sideGuests: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  sideCash: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: 'bold',
-    color: theme.colors.secondary,
-    marginTop: theme.spacing.xs,
   },
   // Events section
   eventsSection: {
@@ -469,46 +293,5 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: theme.fontSize.md,
     fontWeight: '600',
-  },
-  // Recent entries
-  recentSection: {
-    padding: theme.spacing.lg,
-  },
-  entryCard: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  entryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  entryName: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  entryAmount: {
-    fontSize: theme.fontSize.md,
-    fontWeight: 'bold',
-    color: theme.colors.secondary,
-  },
-  entrySide: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    textTransform: 'capitalize',
-    marginTop: 4,
-  },
-  entryModeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginTop: 4,
-  },
-  entryModeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
   },
 });

@@ -21,7 +21,7 @@ import { theme } from '../constants/theme';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-const PREDEFINED_AMOUNTS = [116, 216, 516, 1016, 2016, 5016, 10016];
+const PREDEFINED_AMOUNTS = [216, 516, 1016, 2016, 5016];
 
 export default function GiftEntryScreen() {
   const router = useRouter();
@@ -224,7 +224,7 @@ export default function GiftEntryScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.rupeeSymbol}>₹</Text>
-              <Text style={[styles.label, { color: '#D84315' }]}>Chadivimpulan Amount</Text>
+              <Text style={[styles.label, { color: '#D84315' }]}>₹ Chadivimpulu</Text>
             </View>
             <TextInput
               ref={amountInputRef}

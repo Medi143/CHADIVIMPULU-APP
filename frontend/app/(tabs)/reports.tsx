@@ -23,6 +23,7 @@ export default function Reports() {
   const { user, activeEvent } = useAuth();
   const insets = useSafeAreaInsets();
   const [analytics, setAnalytics] = useState<any>(null);
+  const [dashStats, setDashStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'entries' | 'insights'>('entries');
@@ -32,6 +33,7 @@ export default function Reports() {
   useEffect(() => {
     if (eventId) {
       loadAnalytics();
+      loadDashboardStats();
     } else {
       setLoading(false);
     }
@@ -48,6 +50,18 @@ export default function Reports() {
       console.error('Error loading analytics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDashboardStats = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/dashboard/${eventId}`);
+      const data = await response.json();
+      if (data.success) {
+        setDashStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
     }
   };
 
@@ -180,9 +194,6 @@ export default function Reports() {
     </View>
   );
 
-  const totalCash = analytics?.patterns?.total_cash || 0;
-  const totalEntries = analytics?.patterns?.total_entries || 0;
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Custom Header */}
@@ -190,20 +201,60 @@ export default function Reports() {
         <Text style={styles.headerBarTitle}>Reports</Text>
       </View>
 
-      {/* Summary Cards */}
-      <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { backgroundColor: '#E3F2FD' }]}>
-          <Text style={styles.summaryValue}>{totalEntries}</Text>
-          <Text style={styles.summaryLabel}>Total Entries</Text>
+      {/* Dashboard Stats - 6 Summary Boxes */}
+      {dashStats && (
+        <View style={styles.dashStatsSection}>
+          <View style={styles.dashStatsGrid}>
+            <View style={[styles.dashStatCard, { backgroundColor: '#E8F5E9' }]}>
+              <Ionicons name="people" size={26} color="#4CAF50" />
+              <Text style={styles.dashStatValue}>{dashStats.total_guests}</Text>
+              <Text style={styles.dashStatLabel}>Total Guests</Text>
+            </View>
+
+            <View style={[styles.dashStatCard, { backgroundColor: '#FFF3E0' }]}>
+              <Ionicons name="cash" size={26} color="#FF9800" />
+              <Text style={styles.dashStatValue}>
+                {'\u20b9'}{dashStats.total_cash?.toLocaleString()}
+              </Text>
+              <Text style={styles.dashStatLabel}>Total Cash</Text>
+            </View>
+
+            <View style={[styles.dashStatCard, { backgroundColor: '#E3F2FD' }]}>
+              <Ionicons name="gift" size={26} color="#2196F3" />
+              <Text style={styles.dashStatValue}>{dashStats.total_items}</Text>
+              <Text style={styles.dashStatLabel}>Total Items</Text>
+            </View>
+
+            <View style={[styles.dashStatCard, { backgroundColor: '#F3E5F5' }]}>
+              <Ionicons name="card" size={26} color="#9C27B0" />
+              <Text style={styles.dashStatValue}>{dashStats.payment_modes?.upi || 0}</Text>
+              <Text style={styles.dashStatLabel}>UPI Payments</Text>
+            </View>
+          </View>
+
+          {/* Bride/Groom Side Comparison */}
+          <View style={styles.sideComparisonRow}>
+            <View style={styles.sideCompCard}>
+              <Text style={styles.sideCompTitle}>Bride's Side</Text>
+              <Text style={styles.sideCompGuests}>
+                {dashStats.bride_side?.guests || 0} guests
+              </Text>
+              <Text style={styles.sideCompCash}>
+                {'\u20b9'}{(dashStats.bride_side?.cash || 0).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.sideCompCard}>
+              <Text style={styles.sideCompTitle}>Groom's Side</Text>
+              <Text style={styles.sideCompGuests}>
+                {dashStats.groom_side?.guests || 0} guests
+              </Text>
+              <Text style={styles.sideCompCash}>
+                {'\u20b9'}{(dashStats.groom_side?.cash || 0).toLocaleString()}
+              </Text>
+            </View>
+          </View>
         </View>
-        <View style={[styles.summaryCard, { backgroundColor: '#FFF3E0' }]}>
-          <Text style={styles.summaryValue}>
-            {'\u20b9'}
-            {totalCash.toLocaleString()}
-          </Text>
-          <Text style={styles.summaryLabel}>Total Cash</Text>
-        </View>
-      </View>
+      )}
 
       {/* Tab Switcher */}
       <View style={styles.tabRow}>
@@ -461,26 +512,61 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.white,
   },
-  summaryRow: {
-    flexDirection: 'row',
+  // Dashboard Stats (moved from Events page)
+  dashStatsSection: {
     padding: theme.spacing.md,
-    gap: theme.spacing.md,
   },
-  summaryCard: {
-    flex: 1,
+  dashStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dashStatCard: {
+    width: '48%',
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+    marginHorizontal: '1%',
     alignItems: 'center',
   },
-  summaryValue: {
+  dashStatValue: {
     fontSize: theme.fontSize.xl,
     fontWeight: 'bold',
     color: theme.colors.text,
+    marginTop: theme.spacing.sm,
   },
-  summaryLabel: {
-    fontSize: theme.fontSize.xs,
+  dashStatLabel: {
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: 4,
+    marginTop: theme.spacing.xs,
+  },
+  sideComparisonRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+  },
+  sideCompCard: {
+    flex: 1,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  sideCompTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  sideCompGuests: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+  },
+  sideCompCash: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 'bold',
+    color: theme.colors.secondary,
+    marginTop: theme.spacing.xs,
   },
   tabRow: {
     flexDirection: 'row',
