@@ -103,6 +103,12 @@ class AddStaffRequest(BaseModel):
     event_id: str
     role: str
 
+class UpdateProfileRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    profile_photo: Optional[str] = None
+
 # ==================== AUTH ENDPOINTS ====================
 @api_router.post("/auth/instant-login")
 async def instant_login(request: InstantLoginRequest):
@@ -143,6 +149,70 @@ async def instant_login(request: InstantLoginRequest):
     except Exception as e:
         logger.error(f"Error in instant login: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== USER PROFILE ENDPOINTS ====================
+@api_router.get("/users/{user_id}")
+async def get_user_profile(user_id: str):
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"success": True, "user": serialize_doc(user)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.put("/users/{user_id}")
+async def update_user_profile(user_id: str, profile: UpdateProfileRequest):
+    try:
+        update_dict = {k: v for k, v in profile.dict().items() if v is not None}
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No data to update")
+        
+        update_dict["updated_at"] = datetime.utcnow()
+        
+        result = await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": update_dict}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
+        logger.info(f"User profile updated: {user_id}")
+        return {"success": True, "user": serialize_doc(updated_user)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating profile: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/users/{user_id}")
+async def delete_user_account(user_id: str):
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Delete user's events and associated gifts
+        user_events = await db.events.find({"owner_id": user_id}).to_list(100)
+        for event in user_events:
+            event_id = str(event["_id"])
+            await db.gift_entries.delete_many({"event_id": event_id})
+            await db.staff.delete_many({"event_id": event_id})
+            await db.counters.delete_one({"_id": f"gift_sno_{event_id}"})
+        
+        await db.events.delete_many({"owner_id": user_id})
+        await db.staff.delete_many({"user_id": user_id})
+        await db.users.delete_one({"_id": ObjectId(user_id)})
+        
+        logger.info(f"User account deleted: {user_id}")
+        return {"success": True, "message": "Account and all associated data deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting account: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ==================== EVENT ENDPOINTS ====================
 @api_router.post("/events")

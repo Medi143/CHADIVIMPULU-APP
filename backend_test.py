@@ -1,446 +1,421 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for Chadivimpulu Wedding Gift Tracking App
-Testing the updated backend with focus on critical endpoints and data flow.
+Backend API Testing for Chadivimpulu App - User Profile Endpoints
+Testing the NEW User Profile API endpoints and existing Staff endpoints
 """
 
 import requests
 import json
-import base64
 import sys
 from datetime import datetime
 
-# Backend URL from environment configuration
+# Backend URL from frontend .env
 BACKEND_URL = "https://gift-register.preview.emergentagent.com/api"
 
 # Test credentials from test_credentials.md
-TEST_PHONE = "9876543210"  # As specified in review request
-TEST_NAME = "Flow Test User"  # As specified in review request
+TEST_PHONE = "9999999999"
+TEST_NAME = "Test Admin"
 TEST_ROLE = "admin"
 
 class BackendTester:
     def __init__(self):
         self.session = requests.Session()
-        self.user_token = None
         self.user_id = None
+        self.test_user_id = None  # For deletion test
         self.event_id = None
-        self.gift_ids = []
-        self.test_results = []
+        self.staff_id = None
+        self.results = []
         
-    def log_result(self, test_name, success, details=""):
-        """Log test result"""
+    def log_result(self, test_name, success, details="", response_data=None):
+        """Log test results"""
         status = "✅ PASS" if success else "❌ FAIL"
-        self.test_results.append({
+        self.results.append({
             "test": test_name,
+            "status": status,
             "success": success,
-            "details": details
+            "details": details,
+            "response_data": response_data
         })
-        print(f"{status}: {test_name}")
-        if details:
-            print(f"   Details: {details}")
-        print()
+        print(f"{status} {test_name}: {details}")
+        
+    def make_request(self, method, endpoint, data=None, expected_status=200):
+        """Make HTTP request and handle response"""
+        url = f"{BACKEND_URL}{endpoint}"
+        try:
+            if method.upper() == "GET":
+                response = self.session.get(url)
+            elif method.upper() == "POST":
+                response = self.session.post(url, json=data)
+            elif method.upper() == "PUT":
+                response = self.session.put(url, json=data)
+            elif method.upper() == "DELETE":
+                response = self.session.delete(url)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+                
+            print(f"  → {method} {url}")
+            print(f"  → Status: {response.status_code}")
+            
+            if response.status_code == expected_status:
+                try:
+                    return True, response.json()
+                except:
+                    return True, response.text
+            else:
+                try:
+                    error_data = response.json()
+                    return False, f"Status {response.status_code}: {error_data}"
+                except:
+                    return False, f"Status {response.status_code}: {response.text}"
+                    
+        except Exception as e:
+            return False, f"Request failed: {str(e)}"
     
     def test_instant_login(self):
-        """Test instant login with specified credentials"""
-        print("=== Testing Instant Login ===")
+        """Test instant login to get user_id"""
+        print("\n=== Testing Instant Login ===")
         
-        try:
-            payload = {
-                "phone": TEST_PHONE,
-                "name": TEST_NAME,
-                "role": TEST_ROLE
-            }
+        login_data = {
+            "phone": TEST_PHONE,
+            "name": TEST_NAME,
+            "role": TEST_ROLE
+        }
+        
+        success, response = self.make_request("POST", "/auth/instant-login", login_data)
+        
+        if success and response.get("success"):
+            self.user_id = response["user"]["_id"]
+            self.log_result(
+                "Instant Login",
+                True,
+                f"User ID: {self.user_id}",
+                response
+            )
+            return True
+        else:
+            self.log_result("Instant Login", False, str(response))
+            return False
+    
+    def test_get_user_profile(self):
+        """Test GET /api/users/{user_id} - Fetch user profile"""
+        print("\n=== Testing GET User Profile ===")
+        
+        if not self.user_id:
+            self.log_result("GET User Profile", False, "No user_id available")
+            return False
             
-            response = self.session.post(f"{BACKEND_URL}/auth/instant-login", json=payload)
+        success, response = self.make_request("GET", f"/users/{self.user_id}")
+        
+        if success and response.get("success"):
+            user_data = response["user"]
+            expected_fields = ["_id", "phone", "name", "role"]
+            missing_fields = [field for field in expected_fields if field not in user_data]
             
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "user" in data and "token" in data:
-                    self.user_token = data["token"]
-                    self.user_id = data["user"]["_id"]
-                    self.log_result("Instant Login", True, f"User ID: {self.user_id}, Token received")
+            if not missing_fields:
+                self.log_result(
+                    "GET User Profile",
+                    True,
+                    f"Retrieved user: {user_data['name']} ({user_data['phone']})",
+                    response
+                )
+                return True
+            else:
+                self.log_result(
+                    "GET User Profile",
+                    False,
+                    f"Missing fields: {missing_fields}",
+                    response
+                )
+                return False
+        else:
+            self.log_result("GET User Profile", False, str(response))
+            return False
+    
+    def test_update_user_profile(self):
+        """Test PUT /api/users/{user_id} - Update user profile"""
+        print("\n=== Testing PUT User Profile ===")
+        
+        if not self.user_id:
+            self.log_result("PUT User Profile", False, "No user_id available")
+            return False
+            
+        update_data = {
+            "name": "Updated Test Admin",
+            "email": "test@chadivimpulu.com"
+        }
+        
+        success, response = self.make_request("PUT", f"/users/{self.user_id}", update_data)
+        
+        if success and response.get("success"):
+            updated_user = response["user"]
+            if (updated_user.get("name") == update_data["name"] and 
+                updated_user.get("email") == update_data["email"]):
+                self.log_result(
+                    "PUT User Profile",
+                    True,
+                    f"Updated name: {updated_user['name']}, email: {updated_user['email']}",
+                    response
+                )
+                return True
+            else:
+                self.log_result(
+                    "PUT User Profile",
+                    False,
+                    f"Update not reflected properly",
+                    response
+                )
+                return False
+        else:
+            self.log_result("PUT User Profile", False, str(response))
+            return False
+    
+    def test_create_test_user_for_deletion(self):
+        """Create a separate test user for deletion test"""
+        print("\n=== Creating Test User for Deletion ===")
+        
+        test_login_data = {
+            "phone": "8888888888",
+            "name": "Test Delete User",
+            "role": "staff"
+        }
+        
+        success, response = self.make_request("POST", "/auth/instant-login", test_login_data)
+        
+        if success and response.get("success"):
+            self.test_user_id = response["user"]["_id"]
+            self.log_result(
+                "Create Test User for Deletion",
+                True,
+                f"Test User ID: {self.test_user_id}",
+                response
+            )
+            return True
+        else:
+            self.log_result("Create Test User for Deletion", False, str(response))
+            return False
+    
+    def test_delete_user_account(self):
+        """Test DELETE /api/users/{user_id} - Delete user account with cascade"""
+        print("\n=== Testing DELETE User Account ===")
+        
+        if not self.test_user_id:
+            self.log_result("DELETE User Account", False, "No test_user_id available")
+            return False
+            
+        success, response = self.make_request("DELETE", f"/users/{self.test_user_id}")
+        
+        if success and response.get("success"):
+            # Verify user is actually deleted by trying to fetch it
+            verify_success, verify_response = self.make_request("GET", f"/users/{self.test_user_id}", expected_status=404)
+            
+            if not verify_success:  # Should fail with 404
+                self.log_result(
+                    "DELETE User Account",
+                    True,
+                    "User deleted successfully and verified",
+                    response
+                )
+                return True
+            else:
+                self.log_result(
+                    "DELETE User Account",
+                    False,
+                    "User still exists after deletion",
+                    verify_response
+                )
+                return False
+        else:
+            self.log_result("DELETE User Account", False, str(response))
+            return False
+    
+    def test_create_event_for_staff_testing(self):
+        """Create an event for staff testing"""
+        print("\n=== Creating Event for Staff Testing ===")
+        
+        if not self.user_id:
+            self.log_result("Create Event for Staff Testing", False, "No user_id available")
+            return False
+            
+        event_data = {
+            "name": "Staff Test Wedding",
+            "date": "2024-12-31",
+            "location": "Test Venue",
+            "event_type": "wedding",
+            "family_head_name": "Test Family Head",
+            "bride_name": "Test Bride",
+            "groom_name": "Test Groom",
+            "phone_number": TEST_PHONE,
+            "email": "test@example.com",
+            "address": "Test Address",
+            "user_id": self.user_id
+        }
+        
+        success, response = self.make_request("POST", "/events", event_data)
+        
+        if success and response.get("success"):
+            self.event_id = response["event"]["_id"]
+            self.log_result(
+                "Create Event for Staff Testing",
+                True,
+                f"Event ID: {self.event_id}",
+                response
+            )
+            return True
+        else:
+            self.log_result("Create Event for Staff Testing", False, str(response))
+            return False
+    
+    def test_add_staff(self):
+        """Test POST /api/staff - Add staff"""
+        print("\n=== Testing POST Add Staff ===")
+        
+        if not self.event_id:
+            self.log_result("POST Add Staff", False, "No event_id available")
+            return False
+            
+        staff_data = {
+            "phone": "7777777777",
+            "event_id": self.event_id,
+            "role": "staff"
+        }
+        
+        success, response = self.make_request("POST", "/staff", staff_data)
+        
+        if success and response.get("success"):
+            self.log_result(
+                "POST Add Staff",
+                True,
+                f"Staff added for event {self.event_id}",
+                response
+            )
+            return True
+        else:
+            self.log_result("POST Add Staff", False, str(response))
+            return False
+    
+    def test_get_staff_list(self):
+        """Test GET /api/staff/{event_id} - Get staff list for event"""
+        print("\n=== Testing GET Staff List ===")
+        
+        if not self.event_id:
+            self.log_result("GET Staff List", False, "No event_id available")
+            return False
+            
+        success, response = self.make_request("GET", f"/staff/{self.event_id}")
+        
+        if success and response.get("success"):
+            staff_list = response["staff"]
+            if len(staff_list) > 0:
+                # Store staff_id for deletion test
+                self.staff_id = staff_list[0]["_id"]
+                self.log_result(
+                    "GET Staff List",
+                    True,
+                    f"Retrieved {len(staff_list)} staff members",
+                    response
+                )
+                return True
+            else:
+                self.log_result(
+                    "GET Staff List",
+                    False,
+                    "No staff found in list",
+                    response
+                )
+                return False
+        else:
+            self.log_result("GET Staff List", False, str(response))
+            return False
+    
+    def test_remove_staff(self):
+        """Test DELETE /api/staff/{staff_id} - Remove staff"""
+        print("\n=== Testing DELETE Remove Staff ===")
+        
+        if not self.staff_id:
+            self.log_result("DELETE Remove Staff", False, "No staff_id available")
+            return False
+            
+        success, response = self.make_request("DELETE", f"/staff/{self.staff_id}")
+        
+        if success and response.get("success"):
+            # Verify staff is removed by checking staff list
+            verify_success, verify_response = self.make_request("GET", f"/staff/{self.event_id}")
+            
+            if verify_success and verify_response.get("success"):
+                remaining_staff = verify_response["staff"]
+                staff_still_exists = any(s["_id"] == self.staff_id for s in remaining_staff)
+                
+                if not staff_still_exists:
+                    self.log_result(
+                        "DELETE Remove Staff",
+                        True,
+                        "Staff removed successfully and verified",
+                        response
+                    )
                     return True
                 else:
-                    self.log_result("Instant Login", False, f"Invalid response structure: {data}")
+                    self.log_result(
+                        "DELETE Remove Staff",
+                        False,
+                        "Staff still exists after deletion",
+                        verify_response
+                    )
                     return False
             else:
-                self.log_result("Instant Login", False, f"HTTP {response.status_code}: {response.text}")
+                self.log_result(
+                    "DELETE Remove Staff",
+                    False,
+                    "Could not verify staff removal",
+                    verify_response
+                )
                 return False
-                
-        except Exception as e:
-            self.log_result("Instant Login", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_event_creation(self):
-        """Test event creation with full fields"""
-        print("=== Testing Event Creation with Extended Fields ===")
-        
-        try:
-            payload = {
-                "name": "Divya & Suresh Wedding",
-                "date": "2024-02-15",
-                "location": "Grand Palace, Hyderabad",
-                "event_type": "wedding",
-                "family_head_name": "Mr. Ramesh Kumar",
-                "bride_name": "Divya",
-                "groom_name": "Suresh",
-                "event_person_name": "Ramesh Kumar",
-                "phone_number": "9876543210",
-                "email": "ramesh@example.com",
-                "address": "123 Main Street, Hyderabad",
-                "user_id": self.user_id
-            }
-            
-            response = self.session.post(f"{BACKEND_URL}/events", json=payload)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "event" in data:
-                    self.event_id = data["event"]["_id"]
-                    event = data["event"]
-                    
-                    # Verify all required fields are present
-                    required_fields = ["event_type", "family_head_name", "bride_name", "groom_name", "phone_number", "email", "address", "code", "guest_limit"]
-                    missing_fields = [field for field in required_fields if field not in event or event[field] is None]
-                    
-                    if missing_fields:
-                        self.log_result("Event Creation", False, f"Missing fields: {missing_fields}")
-                        return False
-                    else:
-                        self.log_result("Event Creation", True, f"Event ID: {self.event_id}, Code: {event.get('code')}")
-                        return True
-                else:
-                    self.log_result("Event Creation", False, f"Invalid response: {data}")
-                    return False
-            else:
-                self.log_result("Event Creation", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Event Creation", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_gift_entries_with_side(self):
-        """Test gift entry creation with side field and different amounts/modes"""
-        print("=== Testing Gift Entry with Side Selection ===")
-        
-        test_gifts = [
-            {
-                "guest_name": "Priya Sharma",
-                "area": "Jubilee Hills",
-                "mobile": "9876543211",
-                "side": "bride",
-                "gift_type": "cash",
-                "amount": 116,
-                "payment_mode": "cash"
-            },
-            {
-                "guest_name": "Rajesh Reddy",
-                "area": "Banjara Hills",
-                "mobile": "9876543212",
-                "side": "groom",
-                "gift_type": "cash",
-                "amount": 516,
-                "payment_mode": "upi"
-            },
-            {
-                "guest_name": "Sunita Devi",
-                "area": "Secunderabad",
-                "mobile": "9876543213",
-                "side": "bride",
-                "gift_type": "cash",
-                "amount": 2016,
-                "payment_mode": "cash"
-            }
-        ]
-        
-        success_count = 0
-        
-        for i, gift_data in enumerate(test_gifts, 1):
-            try:
-                gift_data["event_id"] = self.event_id
-                gift_data["added_by"] = self.user_id
-                
-                response = self.session.post(f"{BACKEND_URL}/gifts", json=gift_data)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    if data.get("success") and "gift" in data:
-                        gift = data["gift"]
-                        gift_id = gift["_id"]
-                        self.gift_ids.append(gift_id)
-                        
-                        # Verify side field is stored correctly
-                        if gift.get("side") == gift_data["side"]:
-                            self.log_result(f"Gift Entry {i} (Side: {gift_data['side']})", True, 
-                                          f"Amount: ₹{gift_data['amount']}, Mode: {gift_data['payment_mode']}, S.No: {gift.get('s_no')}")
-                            success_count += 1
-                        else:
-                            self.log_result(f"Gift Entry {i}", False, f"Side field mismatch: expected {gift_data['side']}, got {gift.get('side')}")
-                    else:
-                        self.log_result(f"Gift Entry {i}", False, f"Invalid response: {data}")
-                else:
-                    self.log_result(f"Gift Entry {i}", False, f"HTTP {response.status_code}: {response.text}")
-                    
-            except Exception as e:
-                self.log_result(f"Gift Entry {i}", False, f"Exception: {str(e)}")
-        
-        return success_count == len(test_gifts)
-    
-    def test_gift_list_with_side_verification(self):
-        """Test gift list retrieval and verify side values"""
-        print("=== Testing Gift List with Side Field Verification ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/gifts/{self.event_id}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "gifts" in data:
-                    gifts = data["gifts"]
-                    
-                    # Verify all gifts have side field and correct values
-                    bride_count = 0
-                    groom_count = 0
-                    
-                    for gift in gifts:
-                        side = gift.get("side")
-                        if side == "bride":
-                            bride_count += 1
-                        elif side == "groom":
-                            groom_count += 1
-                        else:
-                            self.log_result("Gift List Side Verification", False, f"Invalid side value: {side}")
-                            return False
-                    
-                    self.log_result("Gift List Side Verification", True, 
-                                  f"Total gifts: {len(gifts)}, Bride: {bride_count}, Groom: {groom_count}")
-                    return True
-                else:
-                    self.log_result("Gift List Side Verification", False, f"Invalid response: {data}")
-                    return False
-            else:
-                self.log_result("Gift List Side Verification", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Gift List Side Verification", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_reports_with_all_entries(self):
-        """Test reports endpoint for all_entries array with s_no, side, payment_mode"""
-        print("=== Testing Reports with All Entries ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/reports/{self.event_id}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "analytics" in data and "all_entries" in data["analytics"]:
-                    all_entries = data["analytics"]["all_entries"]
-                    
-                    if not all_entries:
-                        self.log_result("Reports All Entries", False, "all_entries array is empty")
-                        return False
-                    
-                    # Verify required fields in all_entries
-                    required_fields = ["s_no", "side", "payment_mode"]
-                    for entry in all_entries:
-                        for field in required_fields:
-                            if field not in entry:
-                                self.log_result("Reports All Entries", False, f"Missing field '{field}' in entry")
-                                return False
-                    
-                    self.log_result("Reports All Entries", True, 
-                                  f"Found {len(all_entries)} entries with s_no, side, payment_mode fields")
-                    return True
-                else:
-                    self.log_result("Reports All Entries", False, f"Invalid response structure: {data}")
-                    return False
-            else:
-                self.log_result("Reports All Entries", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Reports All Entries", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_pdf_export(self):
-        """Test PDF export with base64 validation and file naming"""
-        print("=== Testing PDF Export ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/export/pdf/{self.event_id}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "pdf_data" in data and "file_name" in data:
-                    pdf_data = data["pdf_data"]
-                    file_name = data["file_name"]
-                    
-                    # Verify file name pattern
-                    if not file_name.startswith("Chadivimpulu_") or not file_name.endswith(".pdf"):
-                        self.log_result("PDF Export", False, f"Invalid file name pattern: {file_name}")
-                        return False
-                    
-                    # Verify base64 data is valid
-                    try:
-                        decoded_data = base64.b64decode(pdf_data)
-                        if len(decoded_data) < 100:  # PDF should be substantial
-                            self.log_result("PDF Export", False, f"PDF data too small: {len(decoded_data)} bytes")
-                            return False
-                        
-                        # Check PDF header
-                        if not decoded_data.startswith(b'%PDF'):
-                            self.log_result("PDF Export", False, "Invalid PDF header")
-                            return False
-                        
-                        self.log_result("PDF Export", True, 
-                                      f"File: {file_name}, Size: {len(decoded_data)} bytes, Base64 length: {len(pdf_data)}")
-                        return True
-                        
-                    except Exception as decode_error:
-                        self.log_result("PDF Export", False, f"Base64 decode error: {str(decode_error)}")
-                        return False
-                else:
-                    self.log_result("PDF Export", False, f"Missing pdf_data or file_name: {data}")
-                    return False
-            else:
-                self.log_result("PDF Export", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("PDF Export", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_excel_export(self):
-        """Test Excel export with base64 validation and file naming"""
-        print("=== Testing Excel Export ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/export/excel/{self.event_id}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "excel_data" in data and "file_name" in data:
-                    excel_data = data["excel_data"]
-                    file_name = data["file_name"]
-                    
-                    # Verify file name pattern
-                    if not file_name.startswith("Chadivimpulu_") or not file_name.endswith(".xlsx"):
-                        self.log_result("Excel Export", False, f"Invalid file name pattern: {file_name}")
-                        return False
-                    
-                    # Verify base64 data is valid
-                    try:
-                        decoded_data = base64.b64decode(excel_data)
-                        if len(decoded_data) < 100:  # Excel should be substantial
-                            self.log_result("Excel Export", False, f"Excel data too small: {len(decoded_data)} bytes")
-                            return False
-                        
-                        # Check Excel header (ZIP signature for .xlsx)
-                        if not decoded_data.startswith(b'PK'):
-                            self.log_result("Excel Export", False, "Invalid Excel header (not ZIP format)")
-                            return False
-                        
-                        self.log_result("Excel Export", True, 
-                                      f"File: {file_name}, Size: {len(decoded_data)} bytes, Base64 length: {len(excel_data)}")
-                        return True
-                        
-                    except Exception as decode_error:
-                        self.log_result("Excel Export", False, f"Base64 decode error: {str(decode_error)}")
-                        return False
-                else:
-                    self.log_result("Excel Export", False, f"Missing excel_data or file_name: {data}")
-                    return False
-            else:
-                self.log_result("Excel Export", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Excel Export", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_data_flow_verification(self):
-        """Verify that all gift entries reference the correct event_id"""
-        print("=== Testing Data Flow Verification ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/gifts/{self.event_id}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and "gifts" in data:
-                    gifts = data["gifts"]
-                    
-                    # Verify all gifts have correct event_id
-                    for gift in gifts:
-                        if gift.get("event_id") != self.event_id:
-                            self.log_result("Data Flow Verification", False, 
-                                          f"Gift {gift.get('_id')} has wrong event_id: {gift.get('event_id')}")
-                            return False
-                    
-                    self.log_result("Data Flow Verification", True, 
-                                  f"All {len(gifts)} gifts correctly linked to event {self.event_id}")
-                    return True
-                else:
-                    self.log_result("Data Flow Verification", False, f"Invalid response: {data}")
-                    return False
-            else:
-                self.log_result("Data Flow Verification", False, f"HTTP {response.status_code}: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Data Flow Verification", False, f"Exception: {str(e)}")
+        else:
+            self.log_result("DELETE Remove Staff", False, str(response))
             return False
     
     def run_all_tests(self):
         """Run all tests in sequence"""
-        print(f"🚀 Starting Chadivimpulu Backend API Testing")
+        print("🚀 Starting Backend API Tests for User Profile & Staff Endpoints")
         print(f"Backend URL: {BACKEND_URL}")
-        print(f"Test Credentials: {TEST_PHONE}, {TEST_NAME}, {TEST_ROLE}")
-        print("=" * 60)
+        print(f"Test Credentials: {TEST_PHONE} / {TEST_NAME} / {TEST_ROLE}")
         
-        # Test sequence as per review request
+        # Test sequence
         tests = [
-            ("Instant Login", self.test_instant_login),
-            ("Event Creation", self.test_event_creation),
-            ("Gift Entries with Side", self.test_gift_entries_with_side),
-            ("Gift List Side Verification", self.test_gift_list_with_side_verification),
-            ("Reports All Entries", self.test_reports_with_all_entries),
-            ("PDF Export", self.test_pdf_export),
-            ("Excel Export", self.test_excel_export),
-            ("Data Flow Verification", self.test_data_flow_verification)
+            self.test_instant_login,
+            self.test_get_user_profile,
+            self.test_update_user_profile,
+            self.test_create_test_user_for_deletion,
+            self.test_delete_user_account,
+            self.test_create_event_for_staff_testing,
+            self.test_add_staff,
+            self.test_get_staff_list,
+            self.test_remove_staff
         ]
         
         passed = 0
         total = len(tests)
         
-        for test_name, test_func in tests:
-            if test_func():
-                passed += 1
+        for test in tests:
+            try:
+                if test():
+                    passed += 1
+            except Exception as e:
+                self.log_result(test.__name__, False, f"Exception: {str(e)}")
         
-        print("=" * 60)
-        print(f"🏁 TESTING COMPLETE: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
+        # Summary
+        print(f"\n{'='*60}")
+        print(f"🎯 TEST SUMMARY: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
+        print(f"{'='*60}")
         
-        if passed == total:
-            print("✅ ALL TESTS PASSED - Backend is working correctly!")
-        else:
-            print("❌ SOME TESTS FAILED - Check details above")
-            
-        return passed == total
-
-def main():
-    """Main test execution"""
-    tester = BackendTester()
-    success = tester.run_all_tests()
-    
-    if success:
-        print("\n🎉 Backend testing completed successfully!")
-        sys.exit(0)
-    else:
-        print("\n💥 Backend testing failed!")
-        sys.exit(1)
+        # Detailed results
+        for result in self.results:
+            print(f"{result['status']} {result['test']}: {result['details']}")
+        
+        return passed, total, self.results
 
 if __name__ == "__main__":
-    main()
+    tester = BackendTester()
+    passed, total, results = tester.run_all_tests()
+    
+    # Exit with appropriate code
+    sys.exit(0 if passed == total else 1)

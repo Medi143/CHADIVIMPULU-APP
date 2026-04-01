@@ -53,13 +53,13 @@ export default function Settings() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/edit-profile')}>
           <Ionicons name="person-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Edit Profile</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-security')}>
           <Ionicons name="lock-closed-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Privacy & Security</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
@@ -69,13 +69,13 @@ export default function Settings() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Events</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/events')}>
           <Ionicons name="calendar-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Manage Events</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/manage-staff')}>
           <Ionicons name="people-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Manage Staff</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
@@ -84,6 +84,7 @@ export default function Settings() {
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="qr-code-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Event QR Code</Text>
+          <Text style={styles.menuSubtext}>Coming Soon</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -94,6 +95,7 @@ export default function Settings() {
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Notifications</Text>
+          <Text style={styles.menuSubtext}>Coming Soon</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
@@ -115,13 +117,13 @@ export default function Settings() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Support</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/help-support')}>
           <Ionicons name="help-circle-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Help & Support</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/about')}>
           <Ionicons name="information-circle-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>About</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />

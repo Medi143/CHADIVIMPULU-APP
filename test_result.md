@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the Chadivimpulu Wedding Gift Tracking App backend with comprehensive API testing covering authentication, events, gifts, dashboard, reports, and staff management functionality."
+user_problem_statement: "Test the Chadivimpulu Wedding Gift Tracking App backend - focus on NEW User Profile endpoints: GET /api/users/{user_id}, PUT /api/users/{user_id}, DELETE /api/users/{user_id}. Also verify existing Staff endpoints: POST /api/staff, GET /api/staff/{event_id}, DELETE /api/staff/{staff_id}. Test credentials: phone 9876543210, name Flow Test User."
 
 backend:
   - task: "Authentication - Send OTP"
@@ -283,6 +283,8 @@ agent_communication:
       message: "Major update: 1) Gift entry now includes Side selector (bride/groom). 2) PDF export improved with event details header, summary (bride/groom breakdown), colored table with alternating rows, file named as Chadivimpulu_<EventName>.pdf. 3) Excel export improved with Summary sheet + Gift Entries sheet, proper columns (Name, Area, Amount, Payment Mode, Side, Date), file named Chadivimpulu_<EventName>.xlsx. 4) All data stored in MongoDB. Please test: POST /api/gifts with side field, GET /api/export/pdf/{event_id} for improved PDF, GET /api/export/excel/{event_id} for improved Excel."
     - agent: "testing"
       message: "✅ COMPREHENSIVE FLOW TESTING COMPLETED (8/8 tests passed, 100% success rate): Full data flow test executed successfully with instant login (phone: 9876543210, name: Flow Test User, role: admin) → Event creation with extended fields → 3 gift entries with different sides (bride/groom), amounts (116, 516, 2016), payment modes (cash/upi) → All data correctly linked → PDF export generates valid base64 with proper file naming (Chadivimpulu_*.pdf) → Excel export generates valid base64 with proper file naming (Chadivimpulu_*.xlsx) → Reports endpoint returns all_entries with s_no, side, payment_mode fields. All critical endpoints working perfectly."
+    - agent: "testing"
+      message: "✅ NEW USER PROFILE & STAFF ENDPOINTS TESTING COMPLETED (9/9 tests passed, 100% success rate): 1) GET /api/users/{user_id} - User profile retrieval working perfectly with all required fields. 2) PUT /api/users/{user_id} - Profile update working with name, email, phone, profile_photo fields. 3) DELETE /api/users/{user_id} - Account deletion with cascade working perfectly (deletes events, gifts, staff, counters). 4) POST /api/staff - Staff addition working with phone, event_id, role. 5) GET /api/staff/{event_id} - Staff list retrieval working with user details. 6) DELETE /api/staff/{staff_id} - Staff removal working and verified. All new endpoints fully functional and tested with real data."
 
   - task: "Improved PDF Export with Event Details and Summary"
     implemented: true
@@ -438,3 +440,75 @@ agent_communication:
         - working: true
           agent: "testing"
           comment: "✅ Excel export with S.No working perfectly. GET /api/export/excel/{event_id} generates valid base64 Excel data (7020 chars). Includes S.No column in export with proper formatting."
+
+  - task: "User Profile - Get Profile"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GET /api/users/{user_id} working perfectly. Retrieves user profile with all required fields (_id, phone, name, role). Tested with user ID 69ccd66a89bdb13e62689399."
+
+  - task: "User Profile - Update Profile"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PUT /api/users/{user_id} working perfectly. Successfully updated user profile with name and email fields. Accepts name, phone, email, profile_photo parameters as specified."
+
+  - task: "User Profile - Delete Account"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DELETE /api/users/{user_id} working perfectly. Successfully deletes user account with cascade deletion of events, gifts, staff, and counters. Verified deletion by attempting to fetch deleted user (returns 404)."
+
+  - task: "Staff Management - Add Staff"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/staff working perfectly. Successfully adds staff with phone, event_id, and role. Creates new user if phone doesn't exist, links existing user if found."
+
+  - task: "Staff Management - Get Staff List"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GET /api/staff/{event_id} working perfectly. Retrieves staff list for event with user details. Returns staff records with linked user information."
+
+  - task: "Staff Management - Remove Staff"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DELETE /api/staff/{staff_id} working perfectly. Successfully removes staff member and verified removal by checking staff list. Staff no longer appears in event staff list."
