@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
 import * as FileSystem from 'expo-file-system';
@@ -30,14 +31,18 @@ export default function Reports() {
 
   const eventId = activeEvent?._id || user?.current_event_id;
 
-  useEffect(() => {
-    if (eventId) {
-      loadAnalytics();
-      loadDashboardStats();
-    } else {
-      setLoading(false);
-    }
-  }, [eventId]);
+  // Refresh data every time this tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (eventId) {
+        setLoading(true);
+        loadAnalytics();
+        loadDashboardStats();
+      } else {
+        setLoading(false);
+      }
+    }, [eventId])
+  );
 
   const loadAnalytics = async () => {
     try {

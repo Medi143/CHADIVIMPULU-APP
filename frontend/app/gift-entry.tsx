@@ -192,7 +192,7 @@ export default function GiftEntryScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Ionicons name="person" size={18} color={theme.colors.secondary} />
-              <Text style={styles.label}>Your Name</Text>
+              <Text style={styles.label}>Guest Name*</Text>
             </View>
             <TextInput
               style={styles.input}
@@ -224,7 +224,7 @@ export default function GiftEntryScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.rupeeSymbol}>₹</Text>
-              <Text style={[styles.label, { color: '#D84315' }]}>₹ Chadivimpulu</Text>
+              <Text style={[styles.label, { color: '#D84315' }]}>Chadivimpulu</Text>
             </View>
             <TextInput
               ref={amountInputRef}

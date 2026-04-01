@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
 import { Picker } from '@react-native-picker/picker';
@@ -41,11 +42,14 @@ export default function Gifts() {
     notes: '',
   });
 
-  useEffect(() => {
-    if (eventId) {
-      loadGifts();
-    }
-  }, [eventId, searchQuery, filterSide]);
+  // Refresh data every time this tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (eventId) {
+        loadGifts();
+      }
+    }, [eventId, searchQuery, filterSide])
+  );
 
   const loadGifts = async () => {
     try {
