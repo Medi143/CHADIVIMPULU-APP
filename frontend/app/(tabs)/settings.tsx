@@ -81,10 +81,9 @@ export default function Settings() {
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/event-qr')}>
           <Ionicons name="qr-code-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Event QR Code</Text>
-          <Text style={styles.menuSubtext}>Coming Soon</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -92,24 +91,21 @@ export default function Settings() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/notifications-settings')}>
           <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Notifications</Text>
-          <Text style={styles.menuSubtext}>Coming Soon</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/language-settings')}>
           <Ionicons name="language-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Language</Text>
-          <Text style={styles.menuSubtext}>English</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/theme-settings')}>
           <Ionicons name="color-palette-outline" size={24} color={theme.colors.text} />
           <Text style={styles.menuText}>Theme</Text>
-          <Text style={styles.menuSubtext}>Light</Text>
           <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>

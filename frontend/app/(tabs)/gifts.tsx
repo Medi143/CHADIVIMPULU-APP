@@ -14,8 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useRouter, useNavigation } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
 import { Picker } from '@react-native-picker/picker';
@@ -43,13 +42,21 @@ export default function Gifts() {
   });
 
   // Refresh data every time this tab is focused
-  useFocusEffect(
-    useCallback(() => {
+  const navigation = useNavigation();
+  useEffect(() => {
+    if (eventId) {
+      loadGifts();
+    }
+  }, [eventId, searchQuery, filterSide]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
       if (eventId) {
         loadGifts();
       }
-    }, [eventId, searchQuery, filterSide])
-  );
+    });
+    return unsubscribe;
+  }, [navigation, eventId, searchQuery, filterSide]);
 
   const loadGifts = async () => {
     try {

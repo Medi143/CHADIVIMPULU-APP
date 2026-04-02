@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
 import * as FileSystem from 'expo-file-system';
@@ -32,17 +32,26 @@ export default function Reports() {
   const eventId = activeEvent?._id || user?.current_event_id;
 
   // Refresh data every time this tab is focused
-  useFocusEffect(
-    useCallback(() => {
+  const navigation = useNavigation();
+  useEffect(() => {
+    if (eventId) {
+      loadAnalytics();
+      loadDashboardStats();
+    } else {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
       if (eventId) {
         setLoading(true);
         loadAnalytics();
         loadDashboardStats();
-      } else {
-        setLoading(false);
       }
-    }, [eventId])
-  );
+    });
+    return unsubscribe;
+  }, [navigation, eventId]);
 
   const loadAnalytics = async () => {
     try {
