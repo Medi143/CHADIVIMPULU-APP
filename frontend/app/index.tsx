@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../constants/theme';
-import BrandName from '../components/BrandName';
 
 export default function Index() {
   const router = useRouter();
@@ -23,7 +22,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <BrandName fontSize={42} color={theme.colors.primary} />
+      <Text style={styles.title}>Chadivimpulu</Text>
       <Text style={styles.subtitle}>The Wed Gifting App</Text>
       <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
     </View>

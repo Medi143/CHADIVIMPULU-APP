@@ -224,7 +224,7 @@ export default function GiftEntryScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Text style={styles.rupeeSymbol}>₹</Text>
-              <Text style={[styles.label, { color: '#D84315' }]}>ChadivimpuluTM</Text>
+              <Text style={[styles.label, { color: '#D84315' }]}>Chadivimpulu</Text>
             </View>
             <TextInput
               ref={amountInputRef}

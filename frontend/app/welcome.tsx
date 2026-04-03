@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../constants/theme';
-import BrandName from '../components/BrandName';
 
 const { width } = Dimensions.get('window');
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -78,7 +77,7 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <BrandName fontSize={22} color={theme.colors.primary} />
+        <Text style={styles.headerTitle}>Chadivimpulu</Text>
         <TouchableOpacity onPress={handleGoToDashboard} style={styles.settingsButton}>
           <Ionicons name="grid-outline" size={22} color={theme.colors.white} />
         </TouchableOpacity>
@@ -121,7 +120,7 @@ export default function WelcomeScreen() {
             <Ionicons name="gift" size={36} color={theme.colors.primary} />
           </View>
 
-          <Text style={styles.giftCardTitle}>Digital Gifts - ChadivimpuluTM & More</Text>
+          <Text style={styles.giftCardTitle}>Digital Gifts - Chadivimpulu & More</Text>
           <Text style={styles.giftCardDescription}>
             Share your blessings digitally! Your love and good wishes mean the world to us!
           </Text>

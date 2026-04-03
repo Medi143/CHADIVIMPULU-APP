@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
-import BrandName from '../components/BrandName';
 
 export default function AboutScreen() {
   const router = useRouter();
@@ -33,7 +32,7 @@ export default function AboutScreen() {
           <View style={styles.appIcon}>
             <Ionicons name="gift" size={50} color={theme.colors.white} />
           </View>
-          <BrandName fontSize={32} color={theme.colors.primary} />
+          <Text style={styles.appName}>Chadivimpulu</Text>
           <Text style={styles.appTagline}>The Digital Wed Gift Registry</Text>
           <View style={styles.versionBadge}>
             <Text style={styles.versionText}>Version 1.0.0</Text>
@@ -44,7 +43,7 @@ export default function AboutScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>About the App</Text>
           <Text style={styles.cardText}>
-            ChadivimpuluTM is a modern, offline-friendly mobile app designed for Indian weddings
+            Chadivimpulu is a modern, offline-friendly mobile app designed for Indian weddings
             to digitally record and manage gift entries. It replaces traditional manual writing
             systems with a fast, efficient digital solution perfect for crowded wedding venues.
           </Text>
@@ -89,7 +88,7 @@ export default function AboutScreen() {
               <Ionicons name="code-slash" size={28} color={theme.colors.white} />
             </View>
             <View style={styles.devDetails}>
-              <Text style={styles.devName}>ChadivimpuluTM Team</Text>
+              <Text style={styles.devName}>Chadivimpulu Team</Text>
               <Text style={styles.devDesc}>Crafted with love for Indian weddings</Text>
             </View>
           </View>
@@ -107,7 +106,7 @@ export default function AboutScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.copyright}>2025 ChadivimpuluTM. All rights reserved.</Text>
+        <Text style={styles.copyright}>2025 Chadivimpulu. All rights reserved.</Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>
