@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../constants/theme';
+import BrandName from '../../components/BrandName';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -104,7 +105,7 @@ export default function Home() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Text style={styles.headerBrand}>Chadivimpulu<Text style={{fontSize: 12}}>™</Text></Text>        </View>
+          <BrandName fontSize={22} color={theme.colors.primary} />        </View>
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconBg}>
             <Ionicons name="heart" size={50} color={theme.colors.primary} />
@@ -131,7 +132,7 @@ export default function Home() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerBrand}>Chadivimpulu<Text style={{fontSize: 12}}>™</Text></Text>
+        <BrandName fontSize={22} color={theme.colors.primary} />
         <TouchableOpacity
           onPress={() => router.push('/create-event')}
           style={styles.headerAction}
@@ -182,7 +183,7 @@ export default function Home() {
           </View>
 
           <Text style={styles.giftCardTitle}>
-            Digital Gifts - Chadivimpulu™ & More
+            Digital Gifts - ChadivimpuluTM & More
           </Text>
           <Text style={styles.giftCardDescription}>
             Share your blessings digitally! Your love and good wishes mean the

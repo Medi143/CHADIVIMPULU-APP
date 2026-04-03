@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../constants/theme';
+import BrandName from '../components/BrandName';
 import { Ionicons } from '@expo/vector-icons';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -137,7 +138,7 @@ export default function Login() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Welcome to</Text>
-            <Text style={styles.appName}>Chadivimpulu<Text style={{fontSize: 14}}>™</Text></Text>
+            <BrandName fontSize={36} color={theme.colors.primary} />
             <Text style={styles.subtitle}>Digital Wed Gift Registry</Text>
           </View>
 
