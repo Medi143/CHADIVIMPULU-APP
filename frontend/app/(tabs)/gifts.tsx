@@ -184,8 +184,6 @@ export default function Gifts() {
     );
   }
 
-  const isWedding = activeEvent?.event_type?.toLowerCase() === 'wedding';
-
   return (
     <View style={styles.container}>
       <View style={styles.searchBar}>
@@ -198,37 +196,6 @@ export default function Gifts() {
           placeholderTextColor={theme.colors.textSecondary}
         />
       </View>
-
-      {isWedding && (
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterButton, !filterSide && styles.filterButtonActive]}
-            onPress={() => setFilterSide('')}
-          >
-            <Text style={[styles.filterText, !filterSide && styles.filterTextActive]}>All</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterButton, filterSide === 'bride' && styles.filterButtonActive]}
-            onPress={() => setFilterSide('bride')}
-          >
-            <Text
-              style={[styles.filterText, filterSide === 'bride' && styles.filterTextActive]}
-            >
-              Bride
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.filterButton, filterSide === 'groom' && styles.filterButtonActive]}
-            onPress={() => setFilterSide('groom')}
-          >
-            <Text
-              style={[styles.filterText, filterSide === 'groom' && styles.filterTextActive]}
-            >
-              Groom
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {loading ? (
         <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />

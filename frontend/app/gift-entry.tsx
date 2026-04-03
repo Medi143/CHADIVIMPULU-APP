@@ -21,7 +21,7 @@ import { theme } from '../constants/theme';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-const PREDEFINED_AMOUNTS = [216, 516, 1016, 2016, 5016];
+const PREDEFINED_AMOUNTS = [516, 1016, 2016, 5016, 10016];
 
 export default function GiftEntryScreen() {
   const router = useRouter();
@@ -38,7 +38,8 @@ export default function GiftEntryScreen() {
   const [guestName, setGuestName] = useState('');
   const [area, setArea] = useState('');
   const [amount, setAmount] = useState('');
-  const [side, setSide] = useState<'bride' | 'groom'>('bride');
+  const [giftType, setGiftType] = useState<'cash' | 'item'>('cash');
+  const [itemDescription, setItemDescription] = useState('');
   const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | null>(null);
 
   useEffect(() => {
@@ -88,14 +89,30 @@ export default function GiftEntryScreen() {
     }
   };
 
+  const getEventDisplayName = () => {
+    if (!event) return '';
+    const name = event.name || event.event_name || '';
+    const type = event.event_type || '';
+    if (name.toLowerCase().includes(type.toLowerCase())) return name;
+    return name ? `${name} ${type}` : type;
+  };
+
   const handleSubmit = async (mode: 'cash' | 'upi') => {
     if (!guestName.trim()) {
       Alert.alert('Required', 'Please enter guest name');
       return;
     }
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Required', 'Please enter or select an amount');
-      return;
+
+    if (giftType === 'cash') {
+      if (!amount || parseFloat(amount) <= 0) {
+        Alert.alert('Required', 'Please enter or select an amount');
+        return;
+      }
+    } else {
+      if (!itemDescription.trim()) {
+        Alert.alert('Required', 'Please enter item description');
+        return;
+      }
     }
 
     setPaymentMode(mode);
@@ -104,16 +121,22 @@ export default function GiftEntryScreen() {
 
     try {
       const eventId = params.eventId || activeEvent?._id || user?.current_event_id;
-      const payload = {
+      const payload: any = {
         event_id: eventId,
         guest_name: guestName.trim(),
         area: area.trim(),
-        side: side,
-        gift_type: 'cash',
-        amount: parseFloat(amount),
-        payment_mode: mode,
+        side: 'general',
+        gift_type: giftType,
+        payment_mode: giftType === 'cash' ? mode : 'item',
         added_by: user?.name || user?.phone || 'Staff',
       };
+
+      if (giftType === 'cash') {
+        payload.amount = parseFloat(amount);
+      } else {
+        payload.item_description = itemDescription.trim();
+        payload.amount = 0;
+      }
 
       const response = await fetch(`${BACKEND_URL}/api/gifts`, {
         method: 'POST',
@@ -125,23 +148,23 @@ export default function GiftEntryScreen() {
 
       if (data.success) {
         const sNo = data.gift?.s_no || guestCount + 1;
-        Alert.alert(
-          'Gift Recorded!',
-          `S.No #${sNo}\n${guestName} - ₹${parseFloat(amount).toLocaleString()}\nPayment: ${mode.toUpperCase()}`,
-          [
-            {
-              text: 'Add Another',
-              onPress: () => {
-                resetForm();
-                setGuestCount((prev) => prev + 1);
-              },
+        const msg = giftType === 'cash'
+          ? `S.No #${sNo}\n${guestName} - ₹${parseFloat(amount).toLocaleString()}\nPayment: ${mode.toUpperCase()}`
+          : `S.No #${sNo}\n${guestName} - ${itemDescription}\nType: Gift Item`;
+
+        Alert.alert('Gift Recorded!', msg, [
+          {
+            text: 'Add Another',
+            onPress: () => {
+              resetForm();
+              setGuestCount((prev) => prev + 1);
             },
-            {
-              text: 'Done',
-              onPress: () => router.back(),
-            },
-          ]
-        );
+          },
+          {
+            text: 'Done',
+            onPress: () => router.back(),
+          },
+        ]);
       } else {
         throw new Error(data.detail || 'Failed to save gift');
       }
@@ -158,9 +181,10 @@ export default function GiftEntryScreen() {
     setGuestName('');
     setArea('');
     setAmount('');
+    setItemDescription('');
     setSelectedAmount(null);
     setPaymentMode(null);
-    setSide('bride');
+    setGiftType('cash');
   };
 
   return (
@@ -174,8 +198,12 @@ export default function GiftEntryScreen() {
           <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Gift Entry</Text>
-          <Text style={styles.headerSubtitle}>Enter guest gift details</Text>
+          <Text style={styles.headerTitle}>Add Gift Entry</Text>
+          {event && (
+            <Text style={styles.headerEventName} numberOfLines={1}>
+              {getEventDisplayName()}
+            </Text>
+          )}
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -196,7 +224,7 @@ export default function GiftEntryScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Enter your full name"
+              placeholder="Enter guest full name"
               value={guestName}
               onChangeText={setGuestName}
               placeholderTextColor="#999"
@@ -212,7 +240,7 @@ export default function GiftEntryScreen() {
             </View>
             <TextInput
               style={styles.input}
-              placeholder="Enter your area"
+              placeholder="Enter area / city"
               value={area}
               onChangeText={setArea}
               placeholderTextColor="#999"
@@ -220,86 +248,96 @@ export default function GiftEntryScreen() {
             />
           </View>
 
-          {/* Amount Section */}
+          {/* Gift Type Toggle: Cash / Item */}
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
-              <Text style={styles.rupeeSymbol}>₹</Text>
-              <Text style={[styles.label, { color: '#D84315' }]}>Chadivimpulu</Text>
+              <Ionicons name="gift" size={18} color={theme.colors.secondary} />
+              <Text style={styles.label}>Gift Type</Text>
             </View>
-            <TextInput
-              ref={amountInputRef}
-              style={[styles.input, styles.amountInput]}
-              placeholder="Enter amount"
-              value={amount}
-              onChangeText={handleAmountChange}
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-            />
+            <View style={styles.typeToggleRow}>
+              <TouchableOpacity
+                style={[styles.typeCard, giftType === 'cash' && styles.typeCardActiveCash]}
+                onPress={() => setGiftType('cash')}
+              >
+                <Ionicons name="cash" size={24} color={giftType === 'cash' ? theme.colors.white : '#FF8C00'} />
+                <Text style={[styles.typeCardText, giftType === 'cash' && styles.typeCardTextActive]}>Cash</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.typeCard, giftType === 'item' && styles.typeCardActiveItem]}
+                onPress={() => setGiftType('item')}
+              >
+                <Ionicons name="cube" size={24} color={giftType === 'item' ? theme.colors.white : '#7B1FA2'} />
+                <Text style={[styles.typeCardText, giftType === 'item' && styles.typeCardTextActive]}>Item</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-            {/* Predefined Amount Buttons - Horizontal Scroll */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.amountScrollRow}
-              contentContainerStyle={styles.amountScrollContent}
-            >
-              {PREDEFINED_AMOUNTS.map((val) => (
-                <TouchableOpacity
-                  key={val}
-                  style={[
-                    styles.amountButton,
-                    selectedAmount === val && styles.amountButtonSelected,
-                  ]}
-                  onPress={() => handleAmountSelect(val)}
-                >
-                  <Text
+          {/* Cash Amount Section */}
+          {giftType === 'cash' && (
+            <View style={styles.fieldContainer}>
+              <View style={styles.labelRow}>
+                <Text style={styles.rupeeSymbol}>₹</Text>
+                <Text style={[styles.label, { color: '#D84315' }]}>Amount *</Text>
+              </View>
+              <TextInput
+                ref={amountInputRef}
+                style={[styles.input, styles.amountInput]}
+                placeholder="Enter amount"
+                value={amount}
+                onChangeText={handleAmountChange}
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+              />
+
+              {/* Predefined Amount Buttons */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.amountScrollRow}
+                contentContainerStyle={styles.amountScrollContent}
+              >
+                {PREDEFINED_AMOUNTS.map((val) => (
+                  <TouchableOpacity
+                    key={val}
                     style={[
-                      styles.amountButtonText,
-                      selectedAmount === val && styles.amountButtonTextSelected,
+                      styles.amountButton,
+                      selectedAmount === val && styles.amountButtonSelected,
                     ]}
+                    onPress={() => handleAmountSelect(val)}
                   >
-                    {'\u20b9'}{val.toLocaleString()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+                    <Text
+                      style={[
+                        styles.amountButtonText,
+                        selectedAmount === val && styles.amountButtonTextSelected,
+                      ]}
+                    >
+                      {'\u20b9'}{val.toLocaleString()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
-          {/* Side Selector */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.labelRow}>
-              <Ionicons name="people" size={18} color={theme.colors.secondary} />
-              <Text style={styles.label}>Side</Text>
+          {/* Item Description Section */}
+          {giftType === 'item' && (
+            <View style={styles.fieldContainer}>
+              <View style={styles.labelRow}>
+                <Ionicons name="create" size={18} color="#7B1FA2" />
+                <Text style={[styles.label, { color: '#7B1FA2' }]}>Item Description *</Text>
+              </View>
+              <TextInput
+                style={[styles.input, styles.itemInput]}
+                placeholder="Enter gift item (e.g., Gold Chain, Dinner Set)"
+                value={itemDescription}
+                onChangeText={setItemDescription}
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
             </View>
-            <View style={styles.sideRow}>
-              <TouchableOpacity
-                style={[styles.sideButton, side === 'bride' && styles.sideButtonActive]}
-                onPress={() => setSide('bride')}
-              >
-                <Ionicons
-                  name="woman"
-                  size={18}
-                  color={side === 'bride' ? theme.colors.white : '#E91E63'}
-                />
-                <Text style={[styles.sideButtonText, side === 'bride' && styles.sideButtonTextActive]}>
-                  Bride
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.sideButton, side === 'groom' && styles.sideButtonActiveGroom]}
-                onPress={() => setSide('groom')}
-              >
-                <Ionicons
-                  name="man"
-                  size={18}
-                  color={side === 'groom' ? theme.colors.white : '#1565C0'}
-                />
-                <Text style={[styles.sideButtonText, side === 'groom' && styles.sideButtonTextActive]}>
-                  Groom
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
 
           {/* Event Info Section */}
           <View style={styles.divider} />
@@ -318,7 +356,7 @@ export default function GiftEntryScreen() {
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Guest Limit:</Text>
+              <Text style={styles.infoLabel}>Guest Count:</Text>
               <Text style={styles.infoValue}>
                 {guestCount} / {event?.guest_limit || 500}
               </Text>
@@ -342,37 +380,56 @@ export default function GiftEntryScreen() {
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.payButton, styles.cashButton]}
-            onPress={() => handleSubmit('cash')}
-            disabled={loading}
-          >
-            {loading && paymentMode === 'cash' ? (
-              <ActivityIndicator color={theme.colors.white} />
-            ) : (
-              <>
-                <Ionicons name="cash" size={22} color={theme.colors.white} />
-                <Text style={styles.payButtonText}>Pay by Cash</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        {giftType === 'cash' ? (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.payButton, styles.cashButton]}
+              onPress={() => handleSubmit('cash')}
+              disabled={loading}
+            >
+              {loading && paymentMode === 'cash' ? (
+                <ActivityIndicator color={theme.colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="cash" size={22} color={theme.colors.white} />
+                  <Text style={styles.payButtonText}>Save - Cash</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.payButton, styles.upiButton]}
-            onPress={() => handleSubmit('upi')}
-            disabled={loading}
-          >
-            {loading && paymentMode === 'upi' ? (
-              <ActivityIndicator color={theme.colors.white} />
-            ) : (
-              <>
-                <Ionicons name="phone-portrait" size={22} color={theme.colors.white} />
-                <Text style={styles.payButtonText}>Pay via UPI</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.payButton, styles.upiButton]}
+              onPress={() => handleSubmit('upi')}
+              disabled={loading}
+            >
+              {loading && paymentMode === 'upi' ? (
+                <ActivityIndicator color={theme.colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="phone-portrait" size={22} color={theme.colors.white} />
+                  <Text style={styles.payButtonText}>Save - UPI</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.payButton, styles.itemSaveButton]}
+              onPress={() => handleSubmit('cash')}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={theme.colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="cube" size={22} color={theme.colors.white} />
+                  <Text style={styles.payButtonText}>Save Gift Item</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -404,10 +461,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.white,
   },
-  headerSubtitle: {
-    fontSize: theme.fontSize.xs,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+  headerEventName: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    marginTop: 4,
   },
   scrollView: {
     flex: 1,
@@ -461,6 +519,44 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#D84315',
   },
+  itemInput: {
+    minHeight: 80,
+    paddingTop: 14,
+  },
+  // Type toggle
+  typeToggleRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  typeCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F9F9F9',
+    gap: theme.spacing.sm,
+  },
+  typeCardActiveCash: {
+    backgroundColor: '#FF8C00',
+    borderColor: '#FF8C00',
+  },
+  typeCardActiveItem: {
+    backgroundColor: '#7B1FA2',
+    borderColor: '#7B1FA2',
+  },
+  typeCardText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  typeCardTextActive: {
+    color: theme.colors.white,
+  },
+  // Amounts
   amountScrollRow: {
     marginTop: theme.spacing.md,
   },
@@ -487,38 +583,6 @@ const styles = StyleSheet.create({
     color: '#D84315',
   },
   amountButtonTextSelected: {
-    color: theme.colors.white,
-  },
-  sideRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  sideButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F9F9F9',
-    gap: theme.spacing.sm,
-  },
-  sideButtonActive: {
-    backgroundColor: '#E91E63',
-    borderColor: '#E91E63',
-  },
-  sideButtonActiveGroom: {
-    backgroundColor: '#1565C0',
-    borderColor: '#1565C0',
-  },
-  sideButtonText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  sideButtonTextActive: {
     color: theme.colors.white,
   },
   divider: {
@@ -597,6 +661,9 @@ const styles = StyleSheet.create({
   },
   upiButton: {
     backgroundColor: '#4CAF50',
+  },
+  itemSaveButton: {
+    backgroundColor: '#7B1FA2',
   },
   payButtonText: {
     fontSize: theme.fontSize.lg,
