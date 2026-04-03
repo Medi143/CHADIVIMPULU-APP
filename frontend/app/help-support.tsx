@@ -72,7 +72,7 @@ export default function HelpSupportScreen() {
           <View style={styles.contactRow}>
             <TouchableOpacity
               style={styles.contactButton}
-              onPress={() => Linking.openURL('mailto:support@chadivimpulu.app')}
+      onPress={() => Linking.openURL('mailto:support@chadivimpulu.app')}
             >
               <Ionicons name="mail" size={20} color={theme.colors.white} />
               <Text style={styles.contactBtnText}>Email Us</Text>

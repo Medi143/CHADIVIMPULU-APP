@@ -557,7 +557,7 @@ async def export_pdf(event_id: str):
         
         # === HEADER ===
         p.setFont("Helvetica-Bold", 20)
-        p.drawCentredString(width_page / 2, 750, "Chadivimpulu - Gift Report")
+        p.drawCentredString(width_page / 2, 750, "Chadivimpulu\u2122 - Gift Report")
         
         p.setFont("Helvetica-Bold", 14)
         p.drawCentredString(width_page / 2, 725, event.get('name', 'Event'))
@@ -675,7 +675,7 @@ async def export_excel(event_id: str):
         gold_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
         gold_font = Font(bold=True)
         
-        ws_summary.append(["Chadivimpulu - Gift Report"])
+        ws_summary.append(["Chadivimpulu\u2122 - Gift Report"])
         ws_summary['A1'].font = title_font
         ws_summary.append([])
         ws_summary.append(["Event Name:", event.get('name', '')])

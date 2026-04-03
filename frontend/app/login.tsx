@@ -137,8 +137,8 @@ export default function Login() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Welcome to</Text>
-            <Text style={styles.appName}>Chadivimpulu</Text>
-            <Text style={styles.subtitle}>Digital Wedding Gift Registry</Text>
+            <Text style={styles.appName}>Chadivimpulu<Text style={{fontSize: 14}}>™</Text></Text>
+            <Text style={styles.subtitle}>Digital Wed Gift Registry</Text>
           </View>
 
           {/* Info Box */}

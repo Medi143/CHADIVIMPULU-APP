@@ -104,8 +104,7 @@ export default function Home() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Text style={styles.headerBrand}>Chadivimpulu</Text>
-        </View>
+          <Text style={styles.headerBrand}>Chadivimpulu<Text style={{fontSize: 12}}>™</Text></Text>        </View>
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconBg}>
             <Ionicons name="heart" size={50} color={theme.colors.primary} />
@@ -132,7 +131,7 @@ export default function Home() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerBrand}>Chadivimpulu</Text>
+        <Text style={styles.headerBrand}>Chadivimpulu<Text style={{fontSize: 12}}>™</Text></Text>
         <TouchableOpacity
           onPress={() => router.push('/create-event')}
           style={styles.headerAction}
@@ -183,7 +182,7 @@ export default function Home() {
           </View>
 
           <Text style={styles.giftCardTitle}>
-            Digital Gifts - Chadivimpulu & More
+            Digital Gifts - Chadivimpulu™ & More
           </Text>
           <Text style={styles.giftCardDescription}>
             Share your blessings digitally! Your love and good wishes mean the

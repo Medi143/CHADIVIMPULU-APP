@@ -22,8 +22,8 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Chadivimpulu</Text>
-      <Text style={styles.subtitle}>The Wedding Gifting App</Text>
+      <Text style={styles.title}>Chadivimpulu<Text style={{fontSize: 18}}>™</Text></Text>
+      <Text style={styles.subtitle}>The Wed Gifting App</Text>
       <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
     </View>
   );
