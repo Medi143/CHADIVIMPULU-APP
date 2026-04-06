@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,9 +41,13 @@ export default function Settings() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileSection}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={60} color={theme.colors.white} />
-        </View>
+        {user?.profile_photo ? (
+          <Image source={{ uri: user.profile_photo }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatar}>
+            <Ionicons name="person" size={60} color={theme.colors.white} />
+          </View>
+        )}
         <Text style={styles.name}>{user?.name}</Text>
         <Text style={styles.phone}>{user?.phone}</Text>
         <View style={styles.roleBadge}>
@@ -153,6 +158,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: theme.colors.primary,
     marginBottom: theme.spacing.md,
   },
   name: {

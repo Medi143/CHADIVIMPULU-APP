@@ -24,7 +24,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, login } = useAuth();
+  const { user, login, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(true);
 
@@ -101,11 +101,11 @@ export default function EditProfileScreen() {
 
       const data = await response.json();
       if (data.success) {
-        // Update local auth context
-        await login({
-          ...user!,
+        // Update local auth context with ALL fields including profile_photo
+        await updateUser({
           name: name.trim(),
           phone: phone.trim(),
+          profile_photo: profilePhoto || undefined,
         });
         Alert.alert('Success', 'Profile updated successfully', [
           { text: 'OK', onPress: () => router.back() },

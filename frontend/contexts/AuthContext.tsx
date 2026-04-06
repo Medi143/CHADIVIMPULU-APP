@@ -7,6 +7,7 @@ interface User {
   name: string;
   role: string;
   current_event_id?: string;
+  profile_photo?: string;
 }
 
 interface ActiveEvent {
@@ -34,6 +35,7 @@ interface AuthContextType {
   loading: boolean;
   activeEvent: ActiveEvent | null;
   login: (userData: User) => Promise<void>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
   logout: () => Promise<void>;
   setActiveEvent: (event: ActiveEvent | null) => Promise<void>;
 }
@@ -82,6 +84,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateUser = async (updates: Partial<User>) => {
+    try {
+      if (user) {
+        const updatedUser = { ...user, ...updates };
+        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.multiRemove([USER_STORAGE_KEY, ACTIVE_EVENT_KEY]);
@@ -116,6 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     activeEvent,
     login,
+    updateUser,
     logout,
     setActiveEvent,
   };

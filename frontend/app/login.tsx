@@ -23,7 +23,7 @@ export default function Login() {
   const { login } = useAuth();
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'viewer'>('admin');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -36,6 +36,12 @@ export default function Login() {
     // Validate name
     if (!name || name.trim().length < 2) {
       Alert.alert('Name Required', 'Please enter your name to continue');
+      return;
+    }
+
+    // Validate T&C
+    if (!agreedToTerms) {
+      Alert.alert('Terms Required', 'Please agree to the Terms & Conditions to continue');
       return;
     }
 
@@ -53,7 +59,7 @@ export default function Login() {
         body: JSON.stringify({
           phone: formattedPhone,
           name: name.trim(),
-          role: selectedRole,
+          role: 'admin',
         }),
       });
 
@@ -79,50 +85,7 @@ export default function Login() {
     }
   };
 
-  const RoleCard = ({ 
-    role, 
-    icon, 
-    title, 
-    description 
-  }: { 
-    role: 'admin' | 'staff' | 'viewer'; 
-    icon: string; 
-    title: string; 
-    description: string;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.roleCard,
-        selectedRole === role && styles.roleCardSelected,
-      ]}
-      onPress={() => setSelectedRole(role)}
-      disabled={loading}
-    >
-      <View style={styles.roleCardContent}>
-        <Ionicons
-          name={icon as any}
-          size={32}
-          color={selectedRole === role ? theme.colors.primary : theme.colors.textSecondary}
-        />
-        <View style={styles.roleInfo}>
-          <Text style={[
-            styles.roleTitle,
-            selectedRole === role && styles.roleTitleSelected
-          ]}>
-            {title}
-          </Text>
-          <Text style={styles.roleDescription}>{description}</Text>
-        </View>
-        {selectedRole === role && (
-          <Ionicons
-            name="checkmark-circle"
-            size={24}
-            color={theme.colors.primary}
-          />
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+  const canContinue = phone.length >= 10 && name.trim().length >= 2 && agreedToTerms;
 
   return (
     <KeyboardAvoidingView
@@ -180,34 +143,29 @@ export default function Login() {
               autoCapitalize="words"
             />
 
-            {/* Role Selection */}
-            <Text style={styles.label}>Select Your Role *</Text>
-            <View style={styles.rolesContainer}>
-              <RoleCard
-                role="admin"
-                icon="shield-checkmark"
-                title="Admin (Owner)"
-                description="Full access - Manage everything"
-              />
-              <RoleCard
-                role="staff"
-                icon="people"
-                title="Staff"
-                description="Add & edit gift entries"
-              />
-              <RoleCard
-                role="viewer"
-                icon="eye"
-                title="Viewer"
-                description="View-only access"
-              />
-            </View>
+            {/* Terms & Conditions Checkbox */}
+            <TouchableOpacity
+              style={styles.termsRow}
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.7}
+              disabled={loading}
+            >
+              <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+                {agreedToTerms && (
+                  <Ionicons name="checkmark" size={16} color={theme.colors.white} />
+                )}
+              </View>
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+                <Text style={styles.termsLink}>Terms & Conditions</Text>
+              </Text>
+            </TouchableOpacity>
 
             {/* Continue Button */}
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[styles.button, (!canContinue || loading) && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={loading}
+              disabled={!canContinue || loading}
             >
               {loading ? (
                 <View style={styles.buttonContent}>
@@ -324,41 +282,36 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
   },
-  rolesContainer: {
-    marginTop: theme.spacing.sm,
-  },
-  roleCard: {
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  roleCardSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: '#FFF9E6',
-  },
-  roleCardContent: {
+  termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm,
   },
-  roleInfo: {
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  checkboxChecked: {
+    backgroundColor: theme.colors.secondary,
+    borderColor: theme.colors.secondary,
+  },
+  termsText: {
     flex: 1,
-    marginLeft: theme.spacing.md,
-  },
-  roleTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  roleTitleSelected: {
-    color: theme.colors.secondary,
-  },
-  roleDescription: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.text,
+  },
+  termsLink: {
+    color: theme.colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: theme.colors.secondary,
