@@ -76,7 +76,7 @@ export default function Login() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.text }]}>{t('login.welcomeTo')}</Text>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
             <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>{t('login.subtitle')}</Text>
           </View>
 

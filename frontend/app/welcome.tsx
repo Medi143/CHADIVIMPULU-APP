@@ -77,7 +77,7 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chadivimpulu</Text>
+        <Text style={styles.headerTitle}>Chadivimpulu™</Text>
         <TouchableOpacity onPress={handleGoToDashboard} style={styles.settingsButton}>
           <Ionicons name="grid-outline" size={22} color={theme.colors.white} />
         </TouchableOpacity>
@@ -120,7 +120,7 @@ export default function WelcomeScreen() {
             <Ionicons name="gift" size={36} color={theme.colors.primary} />
           </View>
 
-          <Text style={styles.giftCardTitle}>Digital Gifts - Chadivimpulu & More</Text>
+          <Text style={styles.giftCardTitle}>Digital Gifts - Chadivimpulu™ & More</Text>
           <Text style={styles.giftCardDescription}>
             Share your blessings digitally! Your love and good wishes mean the world to us!
           </Text>

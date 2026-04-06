@@ -252,7 +252,7 @@ export default function GiftEntryScreen() {
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Ionicons name="gift" size={18} color={theme.colors.secondary} />
-              <Text style={styles.label}>Chadivimpulu</Text>
+              <Text style={styles.label}>Chadivimpulu™</Text>
             </View>
             <View style={styles.typeToggleRow}>
               <TouchableOpacity

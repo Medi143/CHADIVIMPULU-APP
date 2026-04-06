@@ -32,7 +32,7 @@ export default function AboutScreen() {
           <View style={styles.appIcon}>
             <Ionicons name="gift" size={50} color={theme.colors.white} />
           </View>
-          <Text style={styles.appName}>Chadivimpulu</Text>
+          <Text style={styles.appName}>Chadivimpulu™</Text>
           <Text style={styles.appTagline}>The Digital Wed Gift Registry</Text>
           <View style={styles.versionBadge}>
             <Text style={styles.versionText}>Version 1.0.0</Text>
@@ -43,7 +43,7 @@ export default function AboutScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>About the App</Text>
           <Text style={styles.cardText}>
-            Chadivimpulu is a modern mobile app designed for Indian weddings to digitally record and manage gift entries. It replaces traditional manual writing systems with a fast and efficient digital solution, making it ideal for handling gift records smoothly at wedding events.
+            Chadivimpulu™ is a modern mobile app designed for Indian weddings to digitally record and manage gift entries. It replaces traditional manual writing systems with a fast and efficient digital solution, making it ideal for handling gift records smoothly at wedding events.
           </Text>
         </View>
 
@@ -86,7 +86,7 @@ export default function AboutScreen() {
               <Ionicons name="code-slash" size={28} color={theme.colors.white} />
             </View>
             <View style={styles.devDetails}>
-              <Text style={styles.devName}>Chadivimpulu Team</Text>
+              <Text style={styles.devName}>Chadivimpulu™ Team</Text>
               <Text style={styles.devDesc}>Crafted with love for Indian weddings</Text>
             </View>
           </View>

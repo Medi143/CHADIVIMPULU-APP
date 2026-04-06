@@ -108,7 +108,7 @@ export default function Home() {
     return (
       <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
-          <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu</Text>        </View>
+          <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>        </View>
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconBg, { backgroundColor: theme.colors.cardBackground }]}>
             <Ionicons name="heart" size={50} color={theme.colors.primary} />
@@ -135,7 +135,7 @@ export default function Home() {
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
-        <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu</Text>
+        <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
         <TouchableOpacity
           onPress={() => router.push('/create-event')}
           style={styles.headerAction}
