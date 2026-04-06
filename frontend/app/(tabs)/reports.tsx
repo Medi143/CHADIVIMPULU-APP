@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  FlatList,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +23,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Reports() {
   const { user, activeEvent } = useAuth();
-  const { theme } = useTheme();
+  const { theme: appTheme } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [analytics, setAnalytics] = useState<any>(null);
@@ -35,7 +34,6 @@ export default function Reports() {
 
   const eventId = activeEvent?._id || user?.current_event_id;
 
-  // Refresh data every time this tab is focused
   const navigation = useNavigation();
   useEffect(() => {
     if (eventId) {
@@ -94,7 +92,6 @@ export default function Reports() {
         await FileSystem.writeAsStringAsync(fileUri, data.pdf_data, {
           encoding: FileSystem.EncodingType.Base64,
         });
-
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
           await Sharing.shareAsync(fileUri, {
@@ -126,7 +123,6 @@ export default function Reports() {
         await FileSystem.writeAsStringAsync(fileUri, data.excel_data, {
           encoding: FileSystem.EncodingType.Base64,
         });
-
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
           await Sharing.shareAsync(fileUri, {
@@ -146,15 +142,26 @@ export default function Reports() {
     }
   };
 
+  const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    const day = d.getDate().toString().padStart(2, '0');
+    const mon = (d.getMonth() + 1).toString().padStart(2, '0');
+    const yr = d.getFullYear().toString().slice(-2);
+    const hr = d.getHours().toString().padStart(2, '0');
+    const min = d.getMinutes().toString().padStart(2, '0');
+    return `${day}/${mon}/${yr} ${hr}:${min}`;
+  };
+
   if (!eventId) {
     return (
-      <View style={[styles.emptyContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-        <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
-          <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
+      <View style={[styles.emptyContainer, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+          <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.emptyContent}>
-          <Ionicons name="analytics-outline" size={80} color={theme.colors.textSecondary} />
-          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{t('reports.noEvent')}</Text>
+          <Ionicons name="analytics-outline" size={80} color={appTheme.colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: appTheme.colors.textSecondary }]}>{t('reports.noEvent')}</Text>
         </View>
       </View>
     );
@@ -162,300 +169,221 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-        <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
-          <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
+      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+          <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={appTheme.colors.primary} />
         </View>
       </View>
     );
   }
 
-  const renderEntryRow = ({ item }: { item: any }) => (
-    <View style={styles.tableRow}>
-      <Text style={[styles.tableCell, styles.cellSno]}>{item.s_no}</Text>
-      <Text style={[styles.tableCell, styles.cellName]} numberOfLines={1}>
-        {item.guest_name}
-      </Text>
-      <Text style={[styles.tableCell, styles.cellArea]} numberOfLines={1}>
-        {item.area || '-'}
-      </Text>
-      <Text style={[styles.tableCell, styles.cellAmount]}>
-        {item.gift_type === 'cash'
-          ? `\u20b9${(item.amount || 0).toLocaleString()}`
-          : 'Item'}
-      </Text>
-      <View style={[styles.tableCellView, styles.cellMode]}>
-        <View
-          style={[
-            styles.modeBadge,
-            {
-              backgroundColor:
-                item.payment_mode === 'upi' ? '#E8F5E9' : '#FFF3E0',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.modeBadgeText,
-              {
-                color: item.payment_mode === 'upi' ? '#4CAF50' : '#FF8C00',
-              },
-            ]}
-          >
-            {(item.payment_mode || 'N/A').toUpperCase()}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-      {/* Custom Header */}
-      <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
-        <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+      {/* 1. Header */}
+      <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+        <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
       </View>
 
-      {/* Dashboard Stats - 6 Summary Boxes */}
-      {dashStats && (
-        <View style={styles.dashStatsSection}>
-          <View style={styles.dashStatsGrid}>
-            <View style={[styles.dashStatCard, { backgroundColor: '#E8F5E9' }]}>
-              <Ionicons name="people" size={26} color="#4CAF50" />
-              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.total_guests}</Text>
-              <Text style={styles.dashStatLabel}>{t('reports.totalGuests')}</Text>
-            </View>
-
-            <View style={[styles.dashStatCard, { backgroundColor: '#FFF3E0' }]}>
-              <Ionicons name="cash" size={26} color="#FF9800" />
-              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>
-                {'\u20b9'}{dashStats.total_cash?.toLocaleString()}
-              </Text>
-              <Text style={styles.dashStatLabel}>{t('reports.totalCash')}</Text>
-            </View>
-
-            <View style={[styles.dashStatCard, { backgroundColor: '#E3F2FD' }]}>
-              <Ionicons name="gift" size={26} color="#2196F3" />
-              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.total_items}</Text>
-              <Text style={styles.dashStatLabel}>{t('reports.totalItems')}</Text>
-            </View>
-
-            <View style={[styles.dashStatCard, { backgroundColor: '#F3E5F5' }]}>
-              <Ionicons name="card" size={26} color="#9C27B0" />
-              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.payment_modes?.upi || 0}</Text>
-              <Text style={styles.dashStatLabel}>{t('reports.upiPayments')}</Text>
-            </View>
-          </View>
-
-          {/* Bride/Groom Side Comparison */}
-          <View style={styles.sideComparisonRow}>
-            <View style={[styles.sideCompCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={[styles.sideCompTitle, { color: theme.colors.text }]}>{t('reports.brideSide')}</Text>
-              <Text style={[styles.sideCompGuests, { color: theme.colors.textSecondary }]}>
-                {dashStats.bride_side?.guests || 0} {t('reports.guests')}
-              </Text>
-              <Text style={[styles.sideCompCash, { color: theme.colors.secondary }]}>
-                {'\u20b9'}{(dashStats.bride_side?.cash || 0).toLocaleString()}
-              </Text>
-            </View>
-            <View style={[styles.sideCompCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={[styles.sideCompTitle, { color: theme.colors.text }]}>{t('reports.groomSide')}</Text>
-              <Text style={[styles.sideCompGuests, { color: theme.colors.textSecondary }]}>
-                {dashStats.groom_side?.guests || 0} {t('reports.guests')}
-              </Text>
-              <Text style={[styles.sideCompCash, { color: theme.colors.secondary }]}>
-                {'\u20b9'}{(dashStats.groom_side?.cash || 0).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Tab Switcher */}
-      <View style={[styles.tabRow, { backgroundColor: theme.colors.cardBackground }]}>
+      {/* 2. Tab Switcher (moved to top) */}
+      <View style={[styles.tabRow, { backgroundColor: appTheme.colors.cardBackground }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'entries' && { backgroundColor: theme.colors.secondary }]}
+          style={[styles.tab, activeTab === 'entries' && { backgroundColor: appTheme.colors.secondary }]}
           onPress={() => setActiveTab('entries')}
         >
-          <Ionicons name="list" size={18} color={activeTab === 'entries' ? theme.colors.white : theme.colors.text} />
-          <Text style={[styles.tabText, { color: activeTab === 'entries' ? theme.colors.white : theme.colors.text }]}>
+          <Ionicons name="list" size={18} color={activeTab === 'entries' ? appTheme.colors.white : appTheme.colors.text} />
+          <Text style={[styles.tabText, { color: activeTab === 'entries' ? appTheme.colors.white : appTheme.colors.text }]}>
             {t('reports.giftEntries')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'insights' && { backgroundColor: theme.colors.secondary }]}
+          style={[styles.tab, activeTab === 'insights' && { backgroundColor: appTheme.colors.secondary }]}
           onPress={() => setActiveTab('insights')}
         >
-          <Ionicons name="bulb" size={18} color={activeTab === 'insights' ? theme.colors.white : theme.colors.text} />
-          <Text style={[styles.tabText, { color: activeTab === 'insights' ? theme.colors.white : theme.colors.text }]}>
+          <Ionicons name="bulb" size={18} color={activeTab === 'insights' ? appTheme.colors.white : appTheme.colors.text} />
+          <Text style={[styles.tabText, { color: activeTab === 'insights' ? appTheme.colors.white : appTheme.colors.text }]}>
             {t('reports.insights')}
           </Text>
         </TouchableOpacity>
       </View>
 
       {activeTab === 'entries' ? (
-        <View style={styles.tableContainer}>
-          {/* Table Header */}
-          <View style={[styles.tableHeader, { backgroundColor: theme.colors.secondary }]}>
-            <Text style={[styles.tableHeaderCell, styles.cellSno, { color: theme.colors.white }]}>{t('reports.sno')}</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellName, { color: theme.colors.white }]}>{t('reports.name')}</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellArea, { color: theme.colors.white }]}>{t('reports.areaCol')}</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: theme.colors.white }]}>{t('reports.amountCol')}</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellMode, { color: theme.colors.white }]}>{t('reports.mode')}</Text>
-          </View>
-
-          {analytics?.all_entries && analytics.all_entries.length > 0 ? (
-            <FlatList
-              data={analytics.all_entries}
-              renderItem={renderEntryRow}
-              keyExtractor={(item) => item._id || String(item.s_no)}
-              contentContainerStyle={styles.tableBody}
-              showsVerticalScrollIndicator={false}
-            />
-          ) : (
-            <View style={styles.noData}>
-              <Ionicons
-                name="document-text-outline"
-                size={48}
-                color={theme.colors.textSecondary}
-              />
-              <Text style={styles.noDataText}>No gift entries yet</Text>
+        <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          {/* 3. Gift Entries Table */}
+          <View style={styles.tableContainer}>
+            <View style={[styles.tableHeader, { backgroundColor: appTheme.colors.secondary }]}>
+              <Text style={[styles.tableHeaderCell, styles.cellSno, { color: appTheme.colors.white }]}>{t('reports.sno')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.cellName, { color: appTheme.colors.white }]}>{t('reports.name')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.cellArea, { color: appTheme.colors.white }]}>{t('reports.areaCol')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: appTheme.colors.white }]}>{t('reports.amountCol')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.cellMode, { color: appTheme.colors.white }]}>{t('reports.mode')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.cellDate, { color: appTheme.colors.white }]}>Date</Text>
             </View>
-          )}
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.insightsContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Insights */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('reports.insights')}</Text>
-            {analytics?.insights && analytics.insights.length > 0 ? (
-              analytics.insights.map((insight: string, index: number) => (
-                <View key={index} style={styles.insightCard}>
-                  <Ionicons
-                    name="bulb"
-                    size={20}
-                    color={theme.colors.primary}
-                  />
-                  <Text style={styles.insightText}>{insight}</Text>
+
+            {analytics?.all_entries && analytics.all_entries.length > 0 ? (
+              analytics.all_entries.map((item: any, index: number) => (
+                <View key={item._id || index} style={[styles.tableRow, { backgroundColor: appTheme.colors.cardBackground, borderBottomColor: appTheme.colors.border }]}>
+                  <Text style={[styles.tableCell, styles.cellSno, { color: appTheme.colors.text }]}>{item.s_no}</Text>
+                  <Text style={[styles.tableCell, styles.cellName, { color: appTheme.colors.text }]} numberOfLines={1}>{item.guest_name}</Text>
+                  <Text style={[styles.tableCell, styles.cellArea, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>{item.area || '-'}</Text>
+                  <Text style={[styles.tableCell, styles.cellAmount, { color: appTheme.colors.secondary }]}>
+                    {item.gift_type === 'cash' ? `\u20b9${(item.amount || 0).toLocaleString()}` : 'Item'}
+                  </Text>
+                  <View style={[styles.tableCellView, styles.cellMode]}>
+                    <View style={[styles.modeBadge, { backgroundColor: item.payment_mode === 'upi' ? '#E8F5E9' : '#FFF3E0' }]}>
+                      <Text style={[styles.modeBadgeText, { color: item.payment_mode === 'upi' ? '#4CAF50' : '#FF8C00' }]}>
+                        {(item.payment_mode || 'N/A').toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.tableCell, styles.cellDate, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>
+                    {formatDateTime(item.created_at)}
+                  </Text>
                 </View>
               ))
             ) : (
-              <Text style={styles.noDataText}>{t('reports.noInsights')}</Text>
+              <View style={styles.noData}>
+                <Ionicons name="document-text-outline" size={48} color={appTheme.colors.textSecondary} />
+                <Text style={[styles.noDataText, { color: appTheme.colors.textSecondary }]}>{t('reports.noData')}</Text>
+              </View>
             )}
           </View>
 
-          {/* Top Contributors */}
+          {/* 4. Summary Boxes (moved below table) */}
+          {dashStats && (
+            <View style={styles.summarySection}>
+              <Text style={[styles.summaryTitle, { color: appTheme.colors.text }]}>Summary</Text>
+              <View style={styles.dashStatsGrid}>
+                <View style={[styles.dashStatCard, { backgroundColor: '#E8F5E9' }]}>
+                  <Ionicons name="people" size={26} color="#4CAF50" />
+                  <Text style={[styles.dashStatValue, { color: appTheme.colors.text }]}>{dashStats.total_guests}</Text>
+                  <Text style={styles.dashStatLabel}>{t('reports.totalGuests')}</Text>
+                </View>
+                <View style={[styles.dashStatCard, { backgroundColor: '#FFF3E0' }]}>
+                  <Ionicons name="cash" size={26} color="#FF9800" />
+                  <Text style={[styles.dashStatValue, { color: appTheme.colors.text }]}>{'\u20b9'}{dashStats.total_cash?.toLocaleString()}</Text>
+                  <Text style={styles.dashStatLabel}>{t('reports.totalCash')}</Text>
+                </View>
+                <View style={[styles.dashStatCard, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="gift" size={26} color="#2196F3" />
+                  <Text style={[styles.dashStatValue, { color: appTheme.colors.text }]}>{dashStats.total_items}</Text>
+                  <Text style={styles.dashStatLabel}>{t('reports.totalItems')}</Text>
+                </View>
+                <View style={[styles.dashStatCard, { backgroundColor: '#F3E5F5' }]}>
+                  <Ionicons name="card" size={26} color="#9C27B0" />
+                  <Text style={[styles.dashStatValue, { color: appTheme.colors.text }]}>{dashStats.payment_modes?.upi || 0}</Text>
+                  <Text style={styles.dashStatLabel}>{t('reports.upiPayments')}</Text>
+                </View>
+              </View>
+
+              <View style={styles.sideComparisonRow}>
+                <View style={[styles.sideCompCard, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
+                  <Text style={[styles.sideCompTitle, { color: appTheme.colors.text }]}>{t('reports.brideSide')}</Text>
+                  <Text style={[styles.sideCompGuests, { color: appTheme.colors.textSecondary }]}>{dashStats.bride_side?.guests || 0} {t('reports.guests')}</Text>
+                  <Text style={[styles.sideCompCash, { color: appTheme.colors.secondary }]}>{'\u20b9'}{(dashStats.bride_side?.cash || 0).toLocaleString()}</Text>
+                </View>
+                <View style={[styles.sideCompCard, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
+                  <Text style={[styles.sideCompTitle, { color: appTheme.colors.text }]}>{t('reports.groomSide')}</Text>
+                  <Text style={[styles.sideCompGuests, { color: appTheme.colors.textSecondary }]}>{dashStats.groom_side?.guests || 0} {t('reports.guests')}</Text>
+                  <Text style={[styles.sideCompCash, { color: appTheme.colors.secondary }]}>{'\u20b9'}{(dashStats.groom_side?.cash || 0).toLocaleString()}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      ) : (
+        <ScrollView style={styles.insightsContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('reports.topContributors')}</Text>
-            {analytics?.top_contributors &&
-            analytics.top_contributors.length > 0 ? (
-              analytics.top_contributors.map(
-                (contributor: any, index: number) => (
-                  <View key={index} style={styles.contributorCard}>
-                    <View style={styles.rank}>
-                      <Text style={styles.rankText}>#{index + 1}</Text>
-                    </View>
-                    <View style={styles.contributorInfo}>
-                      <Text style={styles.contributorName}>
-                        {contributor.name}
-                      </Text>
-                      <Text style={styles.contributorSide}>
-                        {contributor.side} side
-                      </Text>
-                    </View>
-                    <Text style={styles.contributorAmount}>
-                      {'\u20b9'}
-                      {contributor.amount?.toLocaleString()}
-                    </Text>
-                  </View>
-                )
-              )
+            <Text style={[styles.sectionTitle, { color: appTheme.colors.text }]}>{t('reports.insights')}</Text>
+            {analytics?.insights && analytics.insights.length > 0 ? (
+              analytics.insights.map((insight: string, index: number) => (
+                <View key={index} style={[styles.insightCard, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <Ionicons name="bulb" size={20} color={appTheme.colors.primary} />
+                  <Text style={[styles.insightText, { color: appTheme.colors.text }]}>{insight}</Text>
+                </View>
+              ))
             ) : (
-              <Text style={styles.noDataText}>{t('reports.noContributors')}</Text>
+              <Text style={[styles.noDataText, { color: appTheme.colors.textSecondary }]}>{t('reports.noInsights')}</Text>
             )}
           </View>
 
-          {/* Statistics */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('reports.statistics')}</Text>
+            <Text style={[styles.sectionTitle, { color: appTheme.colors.text }]}>{t('reports.topContributors')}</Text>
+            {analytics?.top_contributors && analytics.top_contributors.length > 0 ? (
+              analytics.top_contributors.map((contributor: any, index: number) => (
+                <View key={index} style={[styles.contributorCard, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <View style={styles.rank}>
+                    <Text style={styles.rankText}>#{index + 1}</Text>
+                  </View>
+                  <View style={styles.contributorInfo}>
+                    <Text style={[styles.contributorName, { color: appTheme.colors.text }]}>{contributor.name}</Text>
+                    <Text style={[styles.contributorSide, { color: appTheme.colors.textSecondary }]}>{contributor.side} {t('reports.side')}</Text>
+                  </View>
+                  <Text style={[styles.contributorAmount, { color: appTheme.colors.secondary }]}>{'\u20b9'}{contributor.amount?.toLocaleString()}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.noDataText, { color: appTheme.colors.textSecondary }]}>{t('reports.noContributors')}</Text>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: appTheme.colors.text }]}>{t('reports.statistics')}</Text>
             {analytics?.patterns && (
               <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statItemValue}>
-                    {analytics.patterns.cash_vs_items?.cash || 0}
-                  </Text>
-                  <Text style={styles.statItemLabel}>{t('reports.cashGifts')}</Text>
+                <View style={[styles.statItem, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <Text style={[styles.statItemValue, { color: appTheme.colors.text }]}>{analytics.patterns.cash_vs_items?.cash || 0}</Text>
+                  <Text style={[styles.statItemLabel, { color: appTheme.colors.textSecondary }]}>{t('reports.cashGifts')}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statItemValue}>
-                    {analytics.patterns.cash_vs_items?.items || 0}
-                  </Text>
-                  <Text style={styles.statItemLabel}>{t('reports.itemGifts')}</Text>
+                <View style={[styles.statItem, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <Text style={[styles.statItemValue, { color: appTheme.colors.text }]}>{analytics.patterns.cash_vs_items?.items || 0}</Text>
+                  <Text style={[styles.statItemLabel, { color: appTheme.colors.textSecondary }]}>{t('reports.itemGifts')}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statItemValue}>
-                    {analytics.patterns.payment_modes?.cash || 0}
-                  </Text>
-                  <Text style={styles.statItemLabel}>{t('reports.cashPayments')}</Text>
+                <View style={[styles.statItem, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <Text style={[styles.statItemValue, { color: appTheme.colors.text }]}>{analytics.patterns.payment_modes?.cash || 0}</Text>
+                  <Text style={[styles.statItemLabel, { color: appTheme.colors.textSecondary }]}>{t('reports.cashPayments')}</Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statItemValue}>
-                    {analytics.patterns.payment_modes?.upi || 0}
-                  </Text>
-                  <Text style={styles.statItemLabel}>{t('reports.upiPayments')}</Text>
+                <View style={[styles.statItem, { backgroundColor: appTheme.colors.cardBackground }]}>
+                  <Text style={[styles.statItemValue, { color: appTheme.colors.text }]}>{analytics.patterns.payment_modes?.upi || 0}</Text>
+                  <Text style={[styles.statItemLabel, { color: appTheme.colors.textSecondary }]}>{t('reports.upiPayments')}</Text>
                 </View>
               </View>
             )}
           </View>
-          <View style={{ height: 20 }} />
+          <View style={{ height: 100 }} />
         </ScrollView>
       )}
 
       {/* Export Buttons - Fixed at bottom */}
-      <View style={styles.exportSection}>
+      <View style={[styles.exportSection, { backgroundColor: appTheme.colors.cardBackground, borderTopColor: appTheme.colors.border }]}>
         <TouchableOpacity
-          style={[
-            styles.exportButton,
-            styles.pdfButton,
-            exporting === 'pdf' && styles.exportButtonDisabled,
-          ]}
+          style={[styles.exportButton, styles.pdfButton, exporting === 'pdf' && styles.exportButtonDisabled]}
           onPress={exportPDF}
           disabled={!!exporting}
         >
           {exporting === 'pdf' ? (
-            <ActivityIndicator color={theme.colors.white} size="small" />
+            <ActivityIndicator color={appTheme.colors.white} size="small" />
           ) : (
             <>
-              <Ionicons
-                name="document-text"
-                size={20}
-                color={theme.colors.white}
-              />
+              <Ionicons name="document-text" size={20} color={appTheme.colors.white} />
               <Text style={styles.exportButtonText}>{t('reports.exportPDF')}</Text>
             </>
           )}
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={[
-            styles.exportButton,
-            styles.excelButton,
-            exporting === 'excel' && styles.exportButtonDisabled,
-          ]}
+          style={[styles.exportButton, styles.excelButton, exporting === 'excel' && styles.exportButtonDisabled]}
           onPress={exportExcel}
           disabled={!!exporting}
         >
           {exporting === 'excel' ? (
-            <ActivityIndicator color={theme.colors.white} size="small" />
+            <ActivityIndicator color={appTheme.colors.white} size="small" />
           ) : (
             <>
-              <Ionicons name="document" size={20} color={theme.colors.white} />
+              <Ionicons name="document" size={20} color={appTheme.colors.white} />
               <Text style={styles.exportButtonText}>{t('reports.exportExcel')}</Text>
             </>
           )}
@@ -466,106 +394,19 @@ export default function Reports() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  loadingContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  emptyContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.lg,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginTop: theme.spacing.lg,
-  },
-  // Header bar
-  headerBar: {
-    backgroundColor: theme.colors.secondary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-  },
-  headerBarTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.white,
-  },
-  // Dashboard Stats (moved from Events page)
-  dashStatsSection: {
-    padding: theme.spacing.md,
-  },
-  dashStatsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dashStatCard: {
-    width: '48%',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.md,
-    marginHorizontal: '1%',
-    alignItems: 'center',
-  },
-  dashStatValue: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginTop: theme.spacing.sm,
-  },
-  dashStatLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-  },
-  sideComparisonRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-  },
-  sideCompCard: {
-    flex: 1,
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.cardBackground,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sideCompTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  sideCompGuests: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  sideCompCash: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: 'bold',
-    color: theme.colors.secondary,
-    marginTop: theme.spacing.xs,
-  },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1 },
+  loadingContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyContainer: { flex: 1 },
+  emptyContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
+  emptyText: { fontSize: theme.fontSize.md, textAlign: 'center', marginTop: theme.spacing.lg },
+  headerBar: { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
+  headerBarTitle: { fontSize: theme.fontSize.xl, fontWeight: 'bold' },
+  // Tab row
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: theme.spacing.md,
-    backgroundColor: '#F0F0F0',
+    marginTop: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     padding: 4,
     marginBottom: theme.spacing.md,
@@ -579,126 +420,77 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.sm,
     gap: 6,
   },
-  tabActive: {
-    backgroundColor: theme.colors.secondary,
-  },
-  tabText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  tabTextActive: {
-    color: theme.colors.white,
-  },
-  // Table styles
-  tableContainer: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.md,
-  },
+  tabText: { fontSize: theme.fontSize.sm, fontWeight: '600' },
+  // Scroll
+  scrollArea: { flex: 1 },
+  // Table
+  tableContainer: { paddingHorizontal: theme.spacing.md },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.secondary,
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderTopLeftRadius: theme.borderRadius.sm,
     borderTopRightRadius: theme.borderRadius.sm,
   },
-  tableHeaderCell: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: 'bold',
-    color: theme.colors.white,
-    textTransform: 'uppercase',
-  },
-  tableBody: {
-    paddingBottom: 80,
-  },
+  tableHeaderCell: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    backgroundColor: theme.colors.white,
-    alignItems: 'center',
-  },
-  tableCell: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-  },
-  tableCellView: {},
-  cellSno: {
-    width: 40,
-    fontWeight: '700',
-  },
-  cellName: {
-    flex: 2,
-    paddingRight: 8,
-  },
-  cellArea: {
-    flex: 1.5,
-    paddingRight: 8,
-  },
-  cellAmount: {
-    flex: 1.5,
-    fontWeight: '600',
-    color: theme.colors.secondary,
-  },
-  cellMode: {
-    width: 60,
-    alignItems: 'center',
-  },
-  modeBadge: {
+    paddingVertical: 10,
     paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  modeBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  noData: {
-    flex: 1,
+    borderBottomWidth: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.xl,
   },
-  noDataText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.sm,
-  },
-  // Insights Tab
-  insightsContainer: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.md,
-  },
-  section: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+  tableCell: { fontSize: theme.fontSize.xs },
+  tableCellView: {},
+  cellSno: { width: 32, fontWeight: '700' },
+  cellName: { flex: 2, paddingRight: 4 },
+  cellArea: { flex: 1.2, paddingRight: 4 },
+  cellAmount: { flex: 1.2, fontWeight: '600' },
+  cellMode: { width: 50, alignItems: 'center' },
+  cellDate: { width: 70, fontSize: 9 },
+  modeBadge: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
+  modeBadgeText: { fontSize: 9, fontWeight: 'bold' },
+  noData: { alignItems: 'center', justifyContent: 'center', paddingVertical: theme.spacing.xl },
+  noDataText: { fontSize: theme.fontSize.sm, marginTop: theme.spacing.sm },
+  // Summary section (below table)
+  summarySection: { padding: theme.spacing.md, marginTop: theme.spacing.md },
+  summaryTitle: { fontSize: theme.fontSize.lg, fontWeight: 'bold', marginBottom: theme.spacing.md },
+  dashStatsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  dashStatCard: {
+    width: '48%',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.md,
+    marginHorizontal: '1%',
+    alignItems: 'center',
   },
+  dashStatValue: { fontSize: theme.fontSize.xl, fontWeight: 'bold', marginTop: theme.spacing.sm },
+  dashStatLabel: { fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, marginTop: theme.spacing.xs },
+  sideComparisonRow: { flexDirection: 'row', gap: theme.spacing.md, marginTop: theme.spacing.sm },
+  sideCompCard: {
+    flex: 1,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+  },
+  sideCompTitle: { fontSize: theme.fontSize.md, fontWeight: '600', marginBottom: theme.spacing.sm },
+  sideCompGuests: { fontSize: theme.fontSize.sm },
+  sideCompCash: { fontSize: theme.fontSize.lg, fontWeight: 'bold', marginTop: theme.spacing.xs },
+  // Insights
+  insightsContainer: { flex: 1, paddingHorizontal: theme.spacing.md },
+  section: { marginBottom: theme.spacing.lg },
+  sectionTitle: { fontSize: theme.fontSize.lg, fontWeight: 'bold', marginBottom: theme.spacing.md },
   insightCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
   },
-  insightText: {
-    flex: 1,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    marginLeft: theme.spacing.md,
-  },
+  insightText: { flex: 1, fontSize: theme.fontSize.sm, marginLeft: theme.spacing.md },
   contributorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
@@ -712,59 +504,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: theme.spacing.md,
   },
-  rankText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  contributorInfo: {
-    flex: 1,
-  },
-  contributorName: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  contributorSide: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    textTransform: 'capitalize',
-  },
-  contributorAmount: {
-    fontSize: theme.fontSize.md,
-    fontWeight: 'bold',
-    color: theme.colors.secondary,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-  },
-  statItem: {
-    width: '47%',
-    backgroundColor: theme.colors.cardBackground,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-  },
-  statItemValue: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  statItemLabel: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-  },
-  // Export Section
+  rankText: { fontSize: theme.fontSize.sm, fontWeight: 'bold', color: theme.colors.text },
+  contributorInfo: { flex: 1 },
+  contributorName: { fontSize: theme.fontSize.md, fontWeight: '600' },
+  contributorSide: { fontSize: theme.fontSize.xs, textTransform: 'capitalize' },
+  contributorAmount: { fontSize: theme.fontSize.md, fontWeight: 'bold' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+  statItem: { width: '47%', padding: theme.spacing.md, borderRadius: theme.borderRadius.md, alignItems: 'center' },
+  statItemValue: { fontSize: theme.fontSize.xl, fontWeight: 'bold' },
+  statItemLabel: { fontSize: theme.fontSize.xs, marginTop: 4 },
+  // Export
   exportSection: {
     flexDirection: 'row',
     padding: theme.spacing.md,
     gap: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    backgroundColor: theme.colors.white,
   },
   exportButton: {
     flex: 1,
@@ -775,18 +529,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     gap: theme.spacing.sm,
   },
-  pdfButton: {
-    backgroundColor: theme.colors.error,
-  },
-  excelButton: {
-    backgroundColor: theme.colors.success,
-  },
-  exportButtonDisabled: {
-    opacity: 0.6,
-  },
-  exportButtonText: {
-    color: theme.colors.white,
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-  },
+  pdfButton: { backgroundColor: theme.colors.error },
+  excelButton: { backgroundColor: theme.colors.success },
+  exportButtonDisabled: { opacity: 0.6 },
+  exportButtonText: { color: theme.colors.white, fontSize: theme.fontSize.md, fontWeight: '600' },
 });

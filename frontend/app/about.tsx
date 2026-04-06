@@ -43,9 +43,7 @@ export default function AboutScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>About the App</Text>
           <Text style={styles.cardText}>
-            Chadivimpulu is a modern, offline-friendly mobile app designed for Indian weddings
-            to digitally record and manage gift entries. It replaces traditional manual writing
-            systems with a fast, efficient digital solution perfect for crowded wedding venues.
+            Chadivimpulu is a modern mobile app designed for Indian weddings to digitally record and manage gift entries. It replaces traditional manual writing systems with a fast and efficient digital solution, making it ideal for handling gift records smoothly at wedding events.
           </Text>
         </View>
 

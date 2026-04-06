@@ -63,28 +63,11 @@ export default function Settings() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.account')}</Text>
+      <View style={styles.menuList}>
         <MenuItem icon="person-outline" label={t('settings.editProfile')} onPress={() => router.push('/edit-profile')} />
         <MenuItem icon="lock-closed-outline" label={t('settings.privacy')} onPress={() => router.push('/privacy-security')} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.events')}</Text>
-        <MenuItem icon="calendar-outline" label={t('settings.manageEvents')} onPress={() => router.push('/(tabs)/events')} />
-        <MenuItem icon="people-outline" label={t('settings.manageStaff')} onPress={() => router.push('/manage-staff')} />
         <MenuItem icon="qr-code-outline" label={t('settings.eventQR')} onPress={() => router.push('/event-qr')} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.app')}</Text>
         <MenuItem icon="notifications-outline" label={t('settings.notifications')} onPress={() => router.push('/notifications-settings')} />
-        <MenuItem icon="language-outline" label={t('settings.language')} onPress={() => router.push('/language-settings')} />
-        <MenuItem icon="color-palette-outline" label={t('settings.theme')} onPress={() => router.push('/theme-settings')} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.support')}</Text>
         <MenuItem icon="help-circle-outline" label={t('settings.help')} onPress={() => router.push('/help-support')} />
         <MenuItem icon="information-circle-outline" label={t('settings.about')} onPress={() => router.push('/about')} />
       </View>
@@ -108,8 +91,7 @@ const styles = StyleSheet.create({
   phone: { fontSize: 16, opacity: 0.8, marginBottom: 16 },
   roleBadge: { paddingHorizontal: 16, paddingVertical: 4, borderRadius: 8 },
   roleText: { fontSize: 12, fontWeight: '600', color: '#1A1A1A' },
-  section: { marginTop: 24, paddingHorizontal: 24 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase' },
+  menuList: { paddingHorizontal: 24, paddingTop: 24 },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 8 },
   menuText: { flex: 1, fontSize: 16, marginLeft: 16 },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginTop: 32, padding: 16, borderRadius: 12 },
