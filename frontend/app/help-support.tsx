@@ -79,7 +79,7 @@ export default function HelpSupportScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.contactButton, { backgroundColor: '#4CAF50' }]}
-              onPress={() => Linking.openURL('tel:+919876543210')}
+              onPress={() => Linking.openURL('tel:+919381247469')}
             >
               <Ionicons name="call" size={20} color={theme.colors.white} />
               <Text style={styles.contactBtnText}>Call Us</Text>
@@ -93,7 +93,7 @@ export default function HelpSupportScreen() {
             </View>
             <View style={styles.contactDetailRow}>
               <Ionicons name="call-outline" size={16} color={theme.colors.textSecondary} />
-              <Text style={styles.contactDetailText}>+91 98765 43210</Text>
+              <Text style={styles.contactDetailText}>+91 9381247469</Text>
             </View>
           </View>
         </View>

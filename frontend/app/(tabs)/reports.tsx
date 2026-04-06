@@ -155,8 +155,8 @@ export default function Reports() {
 
   if (!eventId) {
     return (
-      <View style={[styles.emptyContainer, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
-        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+      <View style={[styles.emptyContainer, { backgroundColor: appTheme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary, paddingTop: insets.top }]}>
           <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.emptyContent}>
@@ -169,8 +169,8 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
-        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: appTheme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary, paddingTop: insets.top }]}>
           <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.loadingContent}>
@@ -181,9 +181,9 @@ export default function Reports() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: appTheme.colors.background }]}>
       {/* 1. Header */}
-      <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary }]}>
+      <View style={[styles.headerBar, { backgroundColor: appTheme.colors.secondary, paddingTop: insets.top }]}>
         <Text style={[styles.headerBarTitle, { color: appTheme.colors.white }]}>{t('reports.title')}</Text>
       </View>
 
@@ -219,7 +219,6 @@ export default function Reports() {
               <Text style={[styles.tableHeaderCell, styles.cellArea, { color: appTheme.colors.white }]}>{t('reports.areaCol')}</Text>
               <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: appTheme.colors.white }]}>{t('reports.amountCol')}</Text>
               <Text style={[styles.tableHeaderCell, styles.cellMode, { color: appTheme.colors.white }]}>{t('reports.mode')}</Text>
-              <Text style={[styles.tableHeaderCell, styles.cellDate, { color: appTheme.colors.white }]}>Date</Text>
             </View>
 
             {analytics?.all_entries && analytics.all_entries.length > 0 ? (
@@ -229,18 +228,15 @@ export default function Reports() {
                   <Text style={[styles.tableCell, styles.cellName, { color: appTheme.colors.text }]} numberOfLines={1}>{item.guest_name}</Text>
                   <Text style={[styles.tableCell, styles.cellArea, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>{item.area || '-'}</Text>
                   <Text style={[styles.tableCell, styles.cellAmount, { color: appTheme.colors.secondary }]}>
-                    {item.gift_type === 'cash' ? `\u20b9${(item.amount || 0).toLocaleString()}` : 'Item'}
+                    {item.gift_type === 'cash' ? `\u20b9${(item.amount || 0).toLocaleString()}` : (item.item_description || item.gift_item || '-')}
                   </Text>
                   <View style={[styles.tableCellView, styles.cellMode]}>
-                    <View style={[styles.modeBadge, { backgroundColor: item.payment_mode === 'upi' ? '#E8F5E9' : '#FFF3E0' }]}>
-                      <Text style={[styles.modeBadgeText, { color: item.payment_mode === 'upi' ? '#4CAF50' : '#FF8C00' }]}>
-                        {(item.payment_mode || 'N/A').toUpperCase()}
+                    <View style={[styles.modeBadge, { backgroundColor: item.payment_mode === 'upi' ? '#E8F5E9' : (item.gift_type === 'item' ? '#E3F2FD' : '#FFF3E0') }]}>
+                      <Text style={[styles.modeBadgeText, { color: item.payment_mode === 'upi' ? '#4CAF50' : (item.gift_type === 'item' ? '#2196F3' : '#FF8C00') }]}>
+                        {item.gift_type === 'item' ? 'ITEM' : (item.payment_mode || 'N/A').toUpperCase()}
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.tableCell, styles.cellDate, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>
-                    {formatDateTime(item.created_at)}
-                  </Text>
                 </View>
               ))
             ) : (
@@ -445,9 +441,8 @@ const styles = StyleSheet.create({
   cellSno: { width: 32, fontWeight: '700' },
   cellName: { flex: 2, paddingRight: 4 },
   cellArea: { flex: 1.2, paddingRight: 4 },
-  cellAmount: { flex: 1.2, fontWeight: '600' },
-  cellMode: { width: 50, alignItems: 'center' },
-  cellDate: { width: 70, fontSize: 9 },
+  cellAmount: { flex: 1.5, fontWeight: '600' },
+  cellMode: { width: 54, alignItems: 'center' },
   modeBadge: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
   modeBadgeText: { fontSize: 9, fontWeight: 'bold' },
   noData: { alignItems: 'center', justifyContent: 'center', paddingVertical: theme.spacing.xl },

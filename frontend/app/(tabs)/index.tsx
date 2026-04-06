@@ -97,8 +97,13 @@ export default function Home() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.secondary, paddingTop: insets.top }]}>
+          <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
       </View>
     );
   }
@@ -106,8 +111,8 @@ export default function Home() {
   // No event - show create event prompt
   if (!event && !activeEvent) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.secondary, paddingTop: insets.top }]}>
           <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>        </View>
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconBg, { backgroundColor: theme.colors.cardBackground }]}>
@@ -132,16 +137,10 @@ export default function Home() {
   const displayEvent = event || activeEvent;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.secondary, paddingTop: insets.top }]}>
         <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
-        <TouchableOpacity
-          onPress={() => router.push('/create-event')}
-          style={styles.headerAction}
-        >
-          <Ionicons name="add-circle-outline" size={26} color={theme.colors.white} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
