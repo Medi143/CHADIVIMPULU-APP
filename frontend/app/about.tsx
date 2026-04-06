@@ -94,17 +94,19 @@ export default function AboutScreen() {
 
         {/* Legal */}
         <View style={styles.legalSection}>
-          <TouchableOpacity style={styles.legalItem}>
+          <TouchableOpacity style={styles.legalItem} onPress={() => router.push('/terms-of-service')}>
             <Ionicons name="document-text-outline" size={18} color={theme.colors.textSecondary} />
             <Text style={styles.legalText}>Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.legalItem}>
+          <TouchableOpacity style={styles.legalItem} onPress={() => router.push('/privacy-policy')}>
             <Ionicons name="shield-outline" size={18} color={theme.colors.textSecondary} />
             <Text style={styles.legalText}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.copyright}>2025 Chadivimpulu. All rights reserved.</Text>
+        <Text style={styles.copyright}>{'\u00A9'}2026 Chadivimpulu{'\u2122'}. All rights reserved.</Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -238,19 +240,23 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   legalSection: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
   },
   legalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   legalText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.md,
   },
   copyright: {
     textAlign: 'center',

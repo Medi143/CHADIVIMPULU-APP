@@ -20,6 +20,8 @@ function InnerLayout() {
         <Stack.Screen name="manage-staff" />
         <Stack.Screen name="help-support" />
         <Stack.Screen name="about" />
+        <Stack.Screen name="terms-of-service" />
+        <Stack.Screen name="privacy-policy" />
         <Stack.Screen name="event-qr" />
         <Stack.Screen name="notifications-settings" />
         <Stack.Screen name="language-settings" />
