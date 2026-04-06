@@ -248,11 +248,11 @@ export default function GiftEntryScreen() {
             />
           </View>
 
-          {/* Gift Type Toggle: Cash / Item */}
+          {/* Chadivimpulu Toggle: Cash / Item */}
           <View style={styles.fieldContainer}>
             <View style={styles.labelRow}>
               <Ionicons name="gift" size={18} color={theme.colors.secondary} />
-              <Text style={styles.label}>Gift Type</Text>
+              <Text style={styles.label}>Chadivimpulu</Text>
             </View>
             <View style={styles.typeToggleRow}>
               <TouchableOpacity
@@ -363,8 +363,8 @@ export default function GiftEntryScreen() {
             </View>
           </View>
 
-          {/* QR Code Section */}
-          {event?.qr_code && (
+          {/* QR Code Section - Only for Cash */}
+          {giftType === 'cash' && event?.qr_code && (
             <View style={styles.qrSection}>
               <Text style={styles.qrTitle}>QR Code</Text>
               <View style={styles.qrContainer}>
