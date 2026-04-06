@@ -16,6 +16,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useNavigation } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { theme } from '../../constants/theme';
 import { Picker } from '@react-native-picker/picker';
 
@@ -23,6 +25,8 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Gifts() {
   const { user, activeEvent } = useAuth();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const eventId = activeEvent?._id || user?.current_event_id;
   const [gifts, setGifts] = useState([]);
@@ -177,20 +181,20 @@ export default function Gifts() {
 
   if (!eventId) {
     return (
-      <View style={styles.emptyContainer}>
+      <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background }]}>
         <Ionicons name="calendar-outline" size={80} color={theme.colors.textSecondary} />
-        <Text style={styles.emptyText}>Please create an event first</Text>
+        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{t('gifts.noEvent')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchBar}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.searchBar, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
         <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
         <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name or mobile"
+          style={[styles.searchInput, { color: theme.colors.text }]}
+          placeholder={t('gifts.search')}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={theme.colors.textSecondary}

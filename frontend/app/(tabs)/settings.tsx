@@ -10,24 +10,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { theme } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
 
 export default function Settings() {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('settings.logout'),
+      t('settings.logoutConfirm'),
       [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
+          text: t('settings.logout'),
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -38,210 +38,81 @@ export default function Settings() {
     );
   };
 
+  const MenuItem = ({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) => (
+    <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.colors.cardBackground }]} onPress={onPress}>
+      <Ionicons name={icon as any} size={24} color={theme.colors.text} />
+      <Text style={[styles.menuText, { color: theme.colors.text }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.profileSection}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.profileSection, { backgroundColor: theme.colors.secondary }]}>
         {user?.profile_photo ? (
-          <Image source={{ uri: user.profile_photo }} style={styles.avatarImage} />
+          <Image source={{ uri: user.profile_photo }} style={[styles.avatarImage, { borderColor: theme.colors.primary }]} />
         ) : (
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
             <Ionicons name="person" size={60} color={theme.colors.white} />
           </View>
         )}
-        <Text style={styles.name}>{user?.name}</Text>
-        <Text style={styles.phone}>{user?.phone}</Text>
-        <View style={styles.roleBadge}>
+        <Text style={[styles.name, { color: theme.colors.white }]}>{user?.name}</Text>
+        <Text style={[styles.phone, { color: theme.colors.white }]}>{user?.phone}</Text>
+        <View style={[styles.roleBadge, { backgroundColor: theme.colors.primary }]}>
           <Text style={styles.roleText}>{user?.role?.toUpperCase()}</Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/edit-profile')}>
-          <Ionicons name="person-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Edit Profile</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-security')}>
-          <Ionicons name="lock-closed-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Privacy & Security</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.account')}</Text>
+        <MenuItem icon="person-outline" label={t('settings.editProfile')} onPress={() => router.push('/edit-profile')} />
+        <MenuItem icon="lock-closed-outline" label={t('settings.privacy')} onPress={() => router.push('/privacy-security')} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Events</Text>
-        
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(tabs)/events')}>
-          <Ionicons name="calendar-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Manage Events</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/manage-staff')}>
-          <Ionicons name="people-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Manage Staff</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/event-qr')}>
-          <Ionicons name="qr-code-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Event QR Code</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.events')}</Text>
+        <MenuItem icon="calendar-outline" label={t('settings.manageEvents')} onPress={() => router.push('/(tabs)/events')} />
+        <MenuItem icon="people-outline" label={t('settings.manageStaff')} onPress={() => router.push('/manage-staff')} />
+        <MenuItem icon="qr-code-outline" label={t('settings.eventQR')} onPress={() => router.push('/event-qr')} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App</Text>
-        
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/notifications-settings')}>
-          <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/language-settings')}>
-          <Ionicons name="language-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Language</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/theme-settings')}>
-          <Ionicons name="color-palette-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Theme</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.app')}</Text>
+        <MenuItem icon="notifications-outline" label={t('settings.notifications')} onPress={() => router.push('/notifications-settings')} />
+        <MenuItem icon="language-outline" label={t('settings.language')} onPress={() => router.push('/language-settings')} />
+        <MenuItem icon="color-palette-outline" label={t('settings.theme')} onPress={() => router.push('/theme-settings')} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support</Text>
-        
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/help-support')}>
-          <Ionicons name="help-circle-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/about')}>
-          <Ionicons name="information-circle-outline" size={24} color={theme.colors.text} />
-          <Text style={styles.menuText}>About</Text>
-          <Ionicons name="chevron-forward" size={24} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{t('settings.support')}</Text>
+        <MenuItem icon="help-circle-outline" label={t('settings.help')} onPress={() => router.push('/help-support')} />
+        <MenuItem icon="information-circle-outline" label={t('settings.about')} onPress={() => router.push('/about')} />
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.colors.error }]} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={24} color={theme.colors.white} />
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={[styles.logoutText, { color: theme.colors.white }]}>{t('settings.logout')}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.version}>Version 1.0.0</Text>
+      <Text style={[styles.version, { color: theme.colors.textSecondary }]}>{t('settings.version')} 1.0.0</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  profileSection: {
-    alignItems: 'center',
-    padding: theme.spacing.xl,
-    backgroundColor: theme.colors.secondary,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: theme.colors.primary,
-    marginBottom: theme.spacing.md,
-  },
-  name: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
-    color: theme.colors.white,
-    marginBottom: theme.spacing.xs,
-  },
-  phone: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.white,
-    opacity: 0.8,
-    marginBottom: theme.spacing.md,
-  },
-  roleBadge: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-  },
-  roleText: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  section: {
-    marginTop: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.md,
-    textTransform: 'uppercase',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.sm,
-  },
-  menuText: {
-    flex: 1,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    marginLeft: theme.spacing.md,
-  },
-  menuSubtext: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginRight: theme.spacing.sm,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.error,
-    marginHorizontal: theme.spacing.lg,
-    marginTop: theme.spacing.xl,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-  },
-  logoutText: {
-    color: theme.colors.white,
-    fontSize: theme.fontSize.lg,
-    fontWeight: '600',
-    marginLeft: theme.spacing.sm,
-  },
-  version: {
-    textAlign: 'center',
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
-  },
+  container: { flex: 1 },
+  profileSection: { alignItems: 'center', padding: 32 },
+  avatar: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  avatarImage: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, marginBottom: 16 },
+  name: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
+  phone: { fontSize: 16, opacity: 0.8, marginBottom: 16 },
+  roleBadge: { paddingHorizontal: 16, paddingVertical: 4, borderRadius: 8 },
+  roleText: { fontSize: 12, fontWeight: '600', color: '#1A1A1A' },
+  section: { marginTop: 24, paddingHorizontal: 24 },
+  sectionTitle: { fontSize: 14, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 8 },
+  menuText: { flex: 1, fontSize: 16, marginLeft: 16 },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginTop: 32, padding: 16, borderRadius: 12 },
+  logoutText: { fontSize: 18, fontWeight: '600', marginLeft: 8 },
+  version: { textAlign: 'center', fontSize: 14, marginTop: 32, marginBottom: 32 },
 });

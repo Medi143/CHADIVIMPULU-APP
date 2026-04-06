@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { theme } from '../../constants/theme';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -21,6 +23,8 @@ export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, activeEvent, setActiveEvent } = useAuth();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [event, setEvent] = useState<any>(null);
@@ -72,18 +76,18 @@ export default function Home() {
   };
 
   const getEventTypeLabel = () => {
-    if (!event) return 'Event';
-    const labels: Record<string, string> = {
-      wedding: 'Wedding',
-      housewarming: 'Housewarming',
-      engagement: 'Engagement',
-      babyshower: 'Baby Shower',
-      naming: 'Naming Ceremony',
-      birthday: 'Birthday',
-      sashtipoorthi: 'Sashtipoorthi',
-      halfsaree: 'Half Saree',
+    if (!event) return t('event.event');
+    const labelKeys: Record<string, string> = {
+      wedding: 'event.wedding',
+      housewarming: 'event.housewarming',
+      engagement: 'event.engagement',
+      babyshower: 'event.babyshower',
+      naming: 'event.naming',
+      birthday: 'event.birthday',
+      sashtipoorthi: 'event.sashtipoorthi',
+      halfsaree: 'event.halfsaree',
     };
-    return labels[event.event_type] || 'Event';
+    return t(labelKeys[event.event_type] || 'event.event');
   };
 
   const handleStartGiftEntry = () => {
@@ -93,7 +97,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -102,22 +106,22 @@ export default function Home() {
   // No event - show create event prompt
   if (!event && !activeEvent) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Text style={styles.headerBrand}>Chadivimpulu</Text>        </View>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
+          <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu</Text>        </View>
         <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconBg}>
+          <View style={[styles.emptyIconBg, { backgroundColor: theme.colors.cardBackground }]}>
             <Ionicons name="heart" size={50} color={theme.colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>No Event Created</Text>
-          <Text style={styles.emptyText}>
-            Create your first event to start tracking gifts
+          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>{t('home.noEvent')}</Text>
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+            {t('home.noEventDesc')}
           </Text>
           <TouchableOpacity
-            style={styles.createEventButton}
+            style={[styles.createEventButton, { backgroundColor: theme.colors.secondary }]}
             onPress={() => router.push('/create-event')}
           >
-            <Text style={styles.createEventButtonText}>Create Event</Text>
+            <Text style={[styles.createEventButtonText, { color: theme.colors.white }]}>{t('home.createEvent')}</Text>
             <Ionicons name="add-circle" size={22} color={theme.colors.white} />
           </TouchableOpacity>
         </View>
@@ -128,10 +132,10 @@ export default function Home() {
   const displayEvent = event || activeEvent;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerBrand}>Chadivimpulu</Text>
+      <View style={[styles.header, { backgroundColor: theme.colors.secondary }]}>
+        <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu</Text>
         <TouchableOpacity
           onPress={() => router.push('/create-event')}
           style={styles.headerAction}
@@ -151,7 +155,7 @@ export default function Home() {
         {/* Couple Photo */}
         <View style={styles.photoSection}>
           {displayEvent?.couple_photo ? (
-            <View style={styles.photoFrame}>
+            <View style={[styles.photoFrame, { borderColor: theme.colors.primary }]}>
               <Image
                 source={{ uri: displayEvent.couple_photo }}
                 style={styles.couplePhoto}
@@ -159,34 +163,33 @@ export default function Home() {
               />
             </View>
           ) : (
-            <View style={styles.photoPlaceholder}>
+            <View style={[styles.photoPlaceholder, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.primary }]}>
               <Ionicons name="heart" size={50} color={theme.colors.primary} />
             </View>
           )}
         </View>
 
         {/* Welcome Text */}
-        <Text style={styles.welcomeText}>
-          Welcome to the {getEventTypeLabel()} of
+        <Text style={[styles.welcomeText, { color: theme.colors.secondary }]}>
+          {t('home.welcomeToThe')} {getEventTypeLabel()} {t('home.of')}
         </Text>
 
         {/* Names Banner */}
-        <View style={styles.namesBanner}>
+        <View style={[styles.namesBanner, { backgroundColor: theme.colors.primary }]}>
           <Text style={styles.namesText}>{getEventTitle()}</Text>
         </View>
 
         {/* Gift Info Card */}
-        <View style={styles.giftCard}>
+        <View style={[styles.giftCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
           <View style={styles.giftIconContainer}>
             <Ionicons name="gift" size={36} color={theme.colors.primary} />
           </View>
 
-          <Text style={styles.giftCardTitle}>
-            Digital Gifts - Chadivimpulu & More
+          <Text style={[styles.giftCardTitle, { color: theme.colors.secondary }]}>
+            {t('home.digitalGifts')}
           </Text>
-          <Text style={styles.giftCardDescription}>
-            Share your blessings digitally! Your love and good wishes mean the
-            world to us!
+          <Text style={[styles.giftCardDescription, { color: theme.colors.textSecondary }]}>
+            {t('home.blessingsDesc')}
           </Text>
 
           {/* Steps */}
@@ -195,8 +198,8 @@ export default function Home() {
               <View style={[styles.stepIcon, { backgroundColor: '#E3F2FD' }]}>
                 <Ionicons name="person" size={20} color={theme.colors.secondary} />
               </View>
-              <Text style={styles.stepText}>
-                Enter your name and gift amount
+              <Text style={[styles.stepText, { color: theme.colors.text }]}>
+                {t('home.step1')}
               </Text>
             </View>
 
@@ -204,8 +207,8 @@ export default function Home() {
               <View style={[styles.stepIcon, { backgroundColor: '#FFF3E0' }]}>
                 <Ionicons name="card" size={20} color="#FF9800" />
               </View>
-              <Text style={styles.stepText}>
-                Pay instantly via UPI (Google Pay, PhonePe, Paytm)
+              <Text style={[styles.stepText, { color: theme.colors.text }]}>
+                {t('home.step2')}
               </Text>
             </View>
 
@@ -213,8 +216,8 @@ export default function Home() {
               <View style={[styles.stepIcon, { backgroundColor: '#FCE4EC' }]}>
                 <Ionicons name="heart" size={20} color="#E91E63" />
               </View>
-              <Text style={styles.stepText}>
-                Your blessings will be cherished forever
+              <Text style={[styles.stepText, { color: theme.colors.text }]}>
+                {t('home.step3')}
               </Text>
             </View>
           </View>
@@ -225,7 +228,7 @@ export default function Home() {
           style={styles.startButton}
           onPress={handleStartGiftEntry}
         >
-          <Text style={styles.startButtonText}>Start Gift Entry</Text>
+          <Text style={styles.startButtonText}>{t('home.startGiftEntry')}</Text>
           <Ionicons name="arrow-forward" size={22} color={theme.colors.white} />
         </TouchableOpacity>
 

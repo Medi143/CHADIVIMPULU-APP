@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { theme } from '../../constants/theme';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -22,6 +24,8 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Reports() {
   const { user, activeEvent } = useAuth();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [analytics, setAnalytics] = useState<any>(null);
   const [dashStats, setDashStats] = useState<any>(null);
@@ -144,13 +148,13 @@ export default function Reports() {
 
   if (!eventId) {
     return (
-      <View style={[styles.emptyContainer, { paddingTop: insets.top }]}>
-        <View style={styles.headerBar}>
-          <Text style={styles.headerBarTitle}>Reports</Text>
+      <View style={[styles.emptyContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
+          <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.emptyContent}>
           <Ionicons name="analytics-outline" size={80} color={theme.colors.textSecondary} />
-          <Text style={styles.emptyText}>Please create an event first</Text>
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>{t('reports.noEvent')}</Text>
         </View>
       </View>
     );
@@ -158,9 +162,9 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <View style={styles.headerBar}>
-          <Text style={styles.headerBarTitle}>Reports</Text>
+      <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
+        <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
+          <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
         </View>
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -209,10 +213,10 @@ export default function Reports() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
       {/* Custom Header */}
-      <View style={styles.headerBar}>
-        <Text style={styles.headerBarTitle}>Reports</Text>
+      <View style={[styles.headerBar, { backgroundColor: theme.colors.secondary }]}>
+        <Text style={[styles.headerBarTitle, { color: theme.colors.white }]}>{t('reports.title')}</Text>
       </View>
 
       {/* Dashboard Stats - 6 Summary Boxes */}
@@ -221,48 +225,48 @@ export default function Reports() {
           <View style={styles.dashStatsGrid}>
             <View style={[styles.dashStatCard, { backgroundColor: '#E8F5E9' }]}>
               <Ionicons name="people" size={26} color="#4CAF50" />
-              <Text style={styles.dashStatValue}>{dashStats.total_guests}</Text>
-              <Text style={styles.dashStatLabel}>Total Guests</Text>
+              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.total_guests}</Text>
+              <Text style={styles.dashStatLabel}>{t('reports.totalGuests')}</Text>
             </View>
 
             <View style={[styles.dashStatCard, { backgroundColor: '#FFF3E0' }]}>
               <Ionicons name="cash" size={26} color="#FF9800" />
-              <Text style={styles.dashStatValue}>
+              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>
                 {'\u20b9'}{dashStats.total_cash?.toLocaleString()}
               </Text>
-              <Text style={styles.dashStatLabel}>Total Cash</Text>
+              <Text style={styles.dashStatLabel}>{t('reports.totalCash')}</Text>
             </View>
 
             <View style={[styles.dashStatCard, { backgroundColor: '#E3F2FD' }]}>
               <Ionicons name="gift" size={26} color="#2196F3" />
-              <Text style={styles.dashStatValue}>{dashStats.total_items}</Text>
-              <Text style={styles.dashStatLabel}>Total Items</Text>
+              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.total_items}</Text>
+              <Text style={styles.dashStatLabel}>{t('reports.totalItems')}</Text>
             </View>
 
             <View style={[styles.dashStatCard, { backgroundColor: '#F3E5F5' }]}>
               <Ionicons name="card" size={26} color="#9C27B0" />
-              <Text style={styles.dashStatValue}>{dashStats.payment_modes?.upi || 0}</Text>
-              <Text style={styles.dashStatLabel}>UPI Payments</Text>
+              <Text style={[styles.dashStatValue, { color: theme.colors.text }]}>{dashStats.payment_modes?.upi || 0}</Text>
+              <Text style={styles.dashStatLabel}>{t('reports.upiPayments')}</Text>
             </View>
           </View>
 
           {/* Bride/Groom Side Comparison */}
           <View style={styles.sideComparisonRow}>
-            <View style={styles.sideCompCard}>
-              <Text style={styles.sideCompTitle}>Bride's Side</Text>
-              <Text style={styles.sideCompGuests}>
-                {dashStats.bride_side?.guests || 0} guests
+            <View style={[styles.sideCompCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <Text style={[styles.sideCompTitle, { color: theme.colors.text }]}>{t('reports.brideSide')}</Text>
+              <Text style={[styles.sideCompGuests, { color: theme.colors.textSecondary }]}>
+                {dashStats.bride_side?.guests || 0} {t('reports.guests')}
               </Text>
-              <Text style={styles.sideCompCash}>
+              <Text style={[styles.sideCompCash, { color: theme.colors.secondary }]}>
                 {'\u20b9'}{(dashStats.bride_side?.cash || 0).toLocaleString()}
               </Text>
             </View>
-            <View style={styles.sideCompCard}>
-              <Text style={styles.sideCompTitle}>Groom's Side</Text>
-              <Text style={styles.sideCompGuests}>
-                {dashStats.groom_side?.guests || 0} guests
+            <View style={[styles.sideCompCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <Text style={[styles.sideCompTitle, { color: theme.colors.text }]}>{t('reports.groomSide')}</Text>
+              <Text style={[styles.sideCompGuests, { color: theme.colors.textSecondary }]}>
+                {dashStats.groom_side?.guests || 0} {t('reports.guests')}
               </Text>
-              <Text style={styles.sideCompCash}>
+              <Text style={[styles.sideCompCash, { color: theme.colors.secondary }]}>
                 {'\u20b9'}{(dashStats.groom_side?.cash || 0).toLocaleString()}
               </Text>
             </View>
@@ -271,45 +275,23 @@ export default function Reports() {
       )}
 
       {/* Tab Switcher */}
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { backgroundColor: theme.colors.cardBackground }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'entries' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'entries' && { backgroundColor: theme.colors.secondary }]}
           onPress={() => setActiveTab('entries')}
         >
-          <Ionicons
-            name="list"
-            size={18}
-            color={
-              activeTab === 'entries' ? theme.colors.white : theme.colors.text
-            }
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'entries' && styles.tabTextActive,
-            ]}
-          >
-            Gift Entries
+          <Ionicons name="list" size={18} color={activeTab === 'entries' ? theme.colors.white : theme.colors.text} />
+          <Text style={[styles.tabText, { color: activeTab === 'entries' ? theme.colors.white : theme.colors.text }]}>
+            {t('reports.giftEntries')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'insights' && { backgroundColor: theme.colors.secondary }]}
           onPress={() => setActiveTab('insights')}
         >
-          <Ionicons
-            name="bulb"
-            size={18}
-            color={
-              activeTab === 'insights' ? theme.colors.white : theme.colors.text
-            }
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'insights' && styles.tabTextActive,
-            ]}
-          >
-            Insights
+          <Ionicons name="bulb" size={18} color={activeTab === 'insights' ? theme.colors.white : theme.colors.text} />
+          <Text style={[styles.tabText, { color: activeTab === 'insights' ? theme.colors.white : theme.colors.text }]}>
+            {t('reports.insights')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -317,14 +299,12 @@ export default function Reports() {
       {activeTab === 'entries' ? (
         <View style={styles.tableContainer}>
           {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.cellSno]}>S.No</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellName]}>Name</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellArea]}>Area</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellAmount]}>
-              Amount
-            </Text>
-            <Text style={[styles.tableHeaderCell, styles.cellMode]}>Mode</Text>
+          <View style={[styles.tableHeader, { backgroundColor: theme.colors.secondary }]}>
+            <Text style={[styles.tableHeaderCell, styles.cellSno, { color: theme.colors.white }]}>{t('reports.sno')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.cellName, { color: theme.colors.white }]}>{t('reports.name')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.cellArea, { color: theme.colors.white }]}>{t('reports.areaCol')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: theme.colors.white }]}>{t('reports.amountCol')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.cellMode, { color: theme.colors.white }]}>{t('reports.mode')}</Text>
           </View>
 
           {analytics?.all_entries && analytics.all_entries.length > 0 ? (
@@ -353,7 +333,7 @@ export default function Reports() {
         >
           {/* Insights */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Insights</Text>
+            <Text style={styles.sectionTitle}>{t('reports.insights')}</Text>
             {analytics?.insights && analytics.insights.length > 0 ? (
               analytics.insights.map((insight: string, index: number) => (
                 <View key={index} style={styles.insightCard}>
@@ -366,13 +346,13 @@ export default function Reports() {
                 </View>
               ))
             ) : (
-              <Text style={styles.noDataText}>No insights available yet</Text>
+              <Text style={styles.noDataText}>{t('reports.noInsights')}</Text>
             )}
           </View>
 
           {/* Top Contributors */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Top Contributors</Text>
+            <Text style={styles.sectionTitle}>{t('reports.topContributors')}</Text>
             {analytics?.top_contributors &&
             analytics.top_contributors.length > 0 ? (
               analytics.top_contributors.map(
@@ -397,38 +377,38 @@ export default function Reports() {
                 )
               )
             ) : (
-              <Text style={styles.noDataText}>No contributors yet</Text>
+              <Text style={styles.noDataText}>{t('reports.noContributors')}</Text>
             )}
           </View>
 
           {/* Statistics */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Statistics</Text>
+            <Text style={styles.sectionTitle}>{t('reports.statistics')}</Text>
             {analytics?.patterns && (
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
                   <Text style={styles.statItemValue}>
                     {analytics.patterns.cash_vs_items?.cash || 0}
                   </Text>
-                  <Text style={styles.statItemLabel}>Cash Gifts</Text>
+                  <Text style={styles.statItemLabel}>{t('reports.cashGifts')}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statItemValue}>
                     {analytics.patterns.cash_vs_items?.items || 0}
                   </Text>
-                  <Text style={styles.statItemLabel}>Item Gifts</Text>
+                  <Text style={styles.statItemLabel}>{t('reports.itemGifts')}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statItemValue}>
                     {analytics.patterns.payment_modes?.cash || 0}
                   </Text>
-                  <Text style={styles.statItemLabel}>Cash Payments</Text>
+                  <Text style={styles.statItemLabel}>{t('reports.cashPayments')}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statItemValue}>
                     {analytics.patterns.payment_modes?.upi || 0}
                   </Text>
-                  <Text style={styles.statItemLabel}>UPI Payments</Text>
+                  <Text style={styles.statItemLabel}>{t('reports.upiPayments')}</Text>
                 </View>
               </View>
             )}
@@ -457,7 +437,7 @@ export default function Reports() {
                 size={20}
                 color={theme.colors.white}
               />
-              <Text style={styles.exportButtonText}>Export PDF</Text>
+              <Text style={styles.exportButtonText}>{t('reports.exportPDF')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -476,7 +456,7 @@ export default function Reports() {
           ) : (
             <>
               <Ionicons name="document" size={20} color={theme.colors.white} />
-              <Text style={styles.exportButtonText}>Export Excel</Text>
+              <Text style={styles.exportButtonText}>{t('reports.exportExcel')}</Text>
             </>
           )}
         </TouchableOpacity>

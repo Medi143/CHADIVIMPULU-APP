@@ -11,12 +11,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { theme } from '../constants/theme';
 
 export default function LanguageSettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { language, setLanguage, t } = useLanguage();
+  const { theme: appTheme } = useTheme();
 
   const handleLanguageChange = (lang: 'en' | 'te') => {
     setLanguage(lang);
@@ -28,10 +30,10 @@ export default function LanguageSettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: appTheme.colors.secondary }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
+          <Ionicons name="arrow-back" size={24} color={staticTheme.colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('settings.language')}</Text>
         <View style={{ width: 40 }} />
