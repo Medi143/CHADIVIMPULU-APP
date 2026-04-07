@@ -66,7 +66,6 @@ export default function Settings() {
       <View style={styles.menuList}>
         <MenuItem icon="person-outline" label={t('settings.editProfile')} onPress={() => router.push('/edit-profile')} />
         <MenuItem icon="lock-closed-outline" label={t('settings.privacy')} onPress={() => router.push('/privacy-security')} />
-        <MenuItem icon="qr-code-outline" label={t('settings.eventQR')} onPress={() => router.push('/event-qr')} />
         <MenuItem icon="notifications-outline" label={t('settings.notifications')} onPress={() => router.push('/notifications-settings')} />
         <MenuItem icon="help-circle-outline" label={t('settings.help')} onPress={() => router.push('/help-support')} />
         <MenuItem icon="information-circle-outline" label={t('settings.about')} onPress={() => router.push('/about')} />
