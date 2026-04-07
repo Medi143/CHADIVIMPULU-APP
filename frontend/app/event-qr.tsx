@@ -1,11 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
   Platform,
+  Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,170 +16,238 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { theme } from '../constants/theme';
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function EventQRScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeEvent } = useAuth();
+  const { theme: appTheme } = useTheme();
   const qrRef = useRef<any>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  const eventId = activeEvent?._id;
-  const eventName = activeEvent?.name || activeEvent?.event_name || 'Event';
-  const qrValue = eventId ? `chadivimpulu://event/${eventId}` : 'chadivimpulu://app';
+  const eventName = activeEvent?.name || 'My Event';
+  const qrValue = `chadivimpulu://event/${activeEvent?._id || 'demo'}`;
+  const safeEventName = eventName.replace(/[^a-zA-Z0-9]/g, '_');
 
   const getQRBase64 = (): Promise<string> => {
     return new Promise((resolve, reject) => {
-      if (qrRef.current) {
+      if (!qrRef.current) {
+        reject(new Error('QR code not ready'));
+        return;
+      }
+      try {
         qrRef.current.toDataURL((data: string) => {
-          resolve(data);
+          if (data) {
+            resolve(data);
+          } else {
+            reject(new Error('Empty QR data'));
+          }
         });
-      } else {
-        reject(new Error('QR ref not available'));
+      } catch (err) {
+        reject(err);
       }
     });
   };
 
   const handleDownload = async () => {
+    setDownloading(true);
     try {
-      const base64 = await getQRBase64();
-      const safeName = eventName.replace(/[^a-zA-Z0-9]/g, '_');
-      const fileName = `Chadivimpulu_${safeName}_QR.png`;
-      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+      // Request permissions
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to save QR code to your gallery.');
+        setDownloading(false);
+        return;
+      }
 
-      await FileSystem.writeAsStringAsync(fileUri, base64, {
+      const base64Data = await getQRBase64();
+      const fileName = `Chadivimpulu_QR_${safeEventName}.png`;
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'image/png',
-          dialogTitle: 'Save QR Code',
-        });
+      // Save to media library (gallery)
+      const asset = await MediaLibrary.createAssetAsync(fileUri);
+      if (asset) {
+        Alert.alert('QR Code Downloaded Successfully', `Saved as ${fileName} to your gallery.`);
       }
-      Alert.alert('Success', `QR Code saved as ${fileName}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Download error:', error);
-      Alert.alert('Error', 'Failed to download QR Code');
+      Alert.alert('Unable to generate QR. Please try again');
+    } finally {
+      setDownloading(false);
     }
   };
 
   const handleShare = async () => {
+    setSharing(true);
     try {
-      const base64 = await getQRBase64();
-      const safeName = eventName.replace(/[^a-zA-Z0-9]/g, '_');
-      const fileName = `Chadivimpulu_${safeName}_QR.png`;
+      const base64Data = await getQRBase64();
+      const fileName = `Chadivimpulu_QR_${safeEventName}.png`;
       const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
 
-      await FileSystem.writeAsStringAsync(fileUri, base64, {
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      await Sharing.shareAsync(fileUri, {
-        mimeType: 'image/png',
-        dialogTitle: 'Share Event QR Code',
-      });
-    } catch (error) {
+      const shareMessage = `You are invited to contribute your gift digitally via Chadivimpulu\u2122\n\nPlease scan the QR code or install the app:\n\nDownload App:\nhttps://play.google.com/store/apps/details?id=com.chadivimpulu.app\n\nMake your gifting easy and digital \uD83D\uDC9B`;
+
+      // Try sharing image + text
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'image/png',
+          dialogTitle: shareMessage,
+          UTI: 'public.png',
+        });
+      } else {
+        // Fallback to text-only share
+        await Share.share({
+          message: shareMessage,
+          title: 'Chadivimpulu\u2122 Event QR',
+        });
+      }
+    } catch (error: any) {
       console.error('Share error:', error);
-      Alert.alert('Error', 'Failed to share QR Code');
+      if (error.message !== 'User did not share') {
+        Alert.alert('Unable to generate QR. Please try again');
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
-  if (!eventId) {
+  if (!activeEvent) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: appTheme.colors.secondary }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
+            <Ionicons name="arrow-back" size={24} color={appTheme.colors.white} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Event QR Code</Text>
+          <Text style={[styles.headerTitle, { color: appTheme.colors.white }]}>Event QR Code</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyContainer}>
-          <Ionicons name="qr-code-outline" size={60} color={theme.colors.textSecondary} />
-          <Text style={styles.emptyText}>Please select an active event first</Text>
+          <Ionicons name="calendar-outline" size={80} color={appTheme.colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: appTheme.colors.textSecondary }]}>
+            Create an event first to generate QR code
+          </Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: appTheme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: appTheme.colors.secondary }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
+          <Ionicons name="arrow-back" size={24} color={appTheme.colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Event QR Code</Text>
+        <Text style={[styles.headerTitle, { color: appTheme.colors.white }]}>Event QR Code</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        {/* Event Name */}
-        <View style={styles.eventBadge}>
-          <Ionicons name="calendar" size={20} color={theme.colors.secondary} />
-          <Text style={styles.eventName}>{eventName}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Event Info */}
+        <View style={[styles.eventInfoCard, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
+          <Ionicons name="calendar" size={24} color={appTheme.colors.primary} />
+          <View style={styles.eventInfoText}>
+            <Text style={[styles.eventName, { color: appTheme.colors.text }]}>{eventName}</Text>
+            <Text style={[styles.eventDetails, { color: appTheme.colors.textSecondary }]}>
+              {activeEvent?.event_type?.charAt(0).toUpperCase() + activeEvent?.event_type?.slice(1)}
+              {activeEvent?.date ? ` \u2022 ${activeEvent.date}` : ''}
+            </Text>
+          </View>
         </View>
 
-        {/* QR Code Card */}
-        <View style={styles.qrCard}>
-          <View style={styles.qrBorder}>
+        {/* QR Code */}
+        <View style={[styles.qrContainer, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
+          <Text style={[styles.qrTitle, { color: appTheme.colors.text }]}>Scan to Join Event</Text>
+          <View style={styles.qrWrapper}>
             <QRCode
               value={qrValue}
-              size={220}
+              size={200}
               backgroundColor="white"
-              color={theme.colors.secondary}
+              color={appTheme.colors.secondary}
               getRef={(ref: any) => (qrRef.current = ref)}
             />
           </View>
-          <Text style={styles.qrLabel}>Scan to access event</Text>
-          <Text style={styles.qrEventId}>Event ID: {eventId}</Text>
+          <Text style={[styles.qrHint, { color: appTheme.colors.textSecondary }]}>
+            Share this QR code with guests to invite them
+          </Text>
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload}>
-            <Ionicons name="download-outline" size={22} color={theme.colors.white} />
-            <Text style={styles.btnText}>Download QR</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: appTheme.colors.secondary }]}
+            onPress={handleDownload}
+            disabled={downloading}
+          >
+            {downloading ? (
+              <ActivityIndicator color={appTheme.colors.white} size="small" />
+            ) : (
+              <Ionicons name="download-outline" size={22} color={appTheme.colors.white} />
+            )}
+            <Text style={[styles.actionButtonText, { color: appTheme.colors.white }]}>
+              {downloading ? 'Saving...' : 'Download QR'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-            <Ionicons name="share-social-outline" size={22} color={theme.colors.white} />
-            <Text style={styles.btnText}>Share QR</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: appTheme.colors.success || '#4CAF50' }]}
+            onPress={handleShare}
+            disabled={sharing}
+          >
+            {sharing ? (
+              <ActivityIndicator color={appTheme.colors.white} size="small" />
+            ) : (
+              <Ionicons name="share-social-outline" size={22} color={appTheme.colors.white} />
+            )}
+            <Text style={[styles.actionButtonText, { color: appTheme.colors.white }]}>
+              {sharing ? 'Preparing...' : 'Share QR'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.hintText}>
-          Share this QR code with guests so they can quickly access the event.
-        </Text>
-      </View>
+        {/* Share Preview Message */}
+        <View style={[styles.sharePreview, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
+          <Text style={[styles.sharePreviewTitle, { color: appTheme.colors.text }]}>Share Message Preview</Text>
+          <Text style={[styles.sharePreviewText, { color: appTheme.colors.textSecondary }]}>
+            You are invited to contribute your gift digitally via Chadivimpulu{'\u2122'}{'\n\n'}
+            Please scan the QR code or install the app:{'\n\n'}
+            Download App:{'\n'}
+            https://play.google.com/store/apps/details?id=com.chadivimpulu.app{'\n\n'}
+            Make your gifting easy and digital {'\uD83D\uDC9B'}
+          </Text>
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.secondary,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
   },
-  backButton: {
-    padding: theme.spacing.sm,
-  },
+  backButton: { padding: theme.spacing.sm },
   headerTitle: {
     flex: 1,
     fontSize: theme.fontSize.xl,
     fontWeight: 'bold',
-    color: theme.colors.white,
     textAlign: 'center',
   },
   emptyContainer: {
@@ -187,94 +258,84 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.md,
     textAlign: 'center',
+    marginTop: theme.spacing.lg,
   },
-  content: {
-    flex: 1,
-    alignItems: 'center',
+  scrollContent: {
     padding: theme.spacing.lg,
   },
-  eventBadge: {
+  eventInfoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.xl,
+    borderWidth: 1,
+    marginBottom: theme.spacing.lg,
+  },
+  eventInfoText: {
+    marginLeft: theme.spacing.md,
+    flex: 1,
   },
   eventName: {
     fontSize: theme.fontSize.lg,
-    fontWeight: '700',
-    color: theme.colors.secondary,
+    fontWeight: 'bold',
   },
-  qrCard: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
+  eventDetails: {
+    fontSize: theme.fontSize.sm,
+    marginTop: 4,
+  },
+  qrContainer: {
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    marginBottom: theme.spacing.xl,
-  },
-  qrBorder: {
-    padding: theme.spacing.md,
-    borderWidth: 3,
-    borderColor: theme.colors.primary,
+    padding: theme.spacing.xl,
     borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    marginBottom: theme.spacing.lg,
   },
-  qrLabel: {
-    fontSize: theme.fontSize.md,
+  qrTitle: {
+    fontSize: theme.fontSize.lg,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.lg,
   },
-  qrEventId: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
+  qrWrapper: {
+    padding: theme.spacing.lg,
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.md,
   },
-  actionRow: {
+  qrHint: {
+    fontSize: theme.fontSize.sm,
+    marginTop: theme.spacing.lg,
+    textAlign: 'center',
+  },
+  actionButtons: {
     flexDirection: 'row',
     gap: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
-  downloadBtn: {
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.secondary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 14,
+    justifyContent: 'center',
+    padding: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     gap: theme.spacing.sm,
-    elevation: 2,
   },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 14,
-    borderRadius: theme.borderRadius.md,
-    gap: theme.spacing.sm,
-    elevation: 2,
-  },
-  btnText: {
+  actionButtonText: {
     fontSize: theme.fontSize.md,
     fontWeight: '600',
-    color: theme.colors.white,
   },
-  hintText: {
+  sharePreview: {
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+  },
+  sharePreviewTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
+    marginBottom: theme.spacing.md,
+  },
+  sharePreviewText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: theme.spacing.xl,
     lineHeight: 22,
   },
 });

@@ -112,36 +112,6 @@ export default function Reports() {
     }
   };
 
-  const exportExcel = async () => {
-    setExporting('excel');
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/export/excel/${eventId}`);
-      const data = await response.json();
-      if (data.success && data.excel_data) {
-        const fileName = data.file_name || `Chadivimpulu_Report.xlsx`;
-        const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, data.excel_data, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            dialogTitle: 'Save Excel Report',
-          });
-        }
-        Alert.alert('Excel Exported', `File: ${fileName}`);
-      } else {
-        Alert.alert('Error', 'Failed to generate Excel');
-      }
-    } catch (error) {
-      console.error('Error exporting Excel:', error);
-      Alert.alert('Error', 'Failed to export Excel. Please try again.');
-    } finally {
-      setExporting(null);
-    }
-  };
-
   const formatDateTime = (dateStr: string) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
@@ -211,41 +181,43 @@ export default function Reports() {
 
       {activeTab === 'entries' ? (
         <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
-          {/* 3. Gift Entries Table */}
-          <View style={styles.tableContainer}>
-            <View style={[styles.tableHeader, { backgroundColor: appTheme.colors.secondary }]}>
-              <Text style={[styles.tableHeaderCell, styles.cellSno, { color: appTheme.colors.white }]}>{t('reports.sno')}</Text>
-              <Text style={[styles.tableHeaderCell, styles.cellName, { color: appTheme.colors.white }]}>{t('reports.name')}</Text>
-              <Text style={[styles.tableHeaderCell, styles.cellArea, { color: appTheme.colors.white }]}>{t('reports.areaCol')}</Text>
-              <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: appTheme.colors.white }]}>{t('reports.amountCol')}</Text>
-              <Text style={[styles.tableHeaderCell, styles.cellMode, { color: appTheme.colors.white }]}>{t('reports.mode')}</Text>
-            </View>
+          {/* 3. Gift Entries Table with horizontal scroll */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.horizontalScroll}>
+            <View style={styles.tableContainer}>
+              <View style={[styles.tableHeader, { backgroundColor: appTheme.colors.secondary }]}>
+                <Text style={[styles.tableHeaderCell, styles.cellSno, { color: appTheme.colors.white }]}>{t('reports.sno')}</Text>
+                <Text style={[styles.tableHeaderCell, styles.cellName, { color: appTheme.colors.white }]}>{t('reports.name')}</Text>
+                <Text style={[styles.tableHeaderCell, styles.cellArea, { color: appTheme.colors.white }]}>{t('reports.areaCol')}</Text>
+                <Text style={[styles.tableHeaderCell, styles.cellAmount, { color: appTheme.colors.white }]}>{t('reports.amountCol')}</Text>
+                <Text style={[styles.tableHeaderCell, styles.cellMode, { color: appTheme.colors.white }]}>{t('reports.mode')}</Text>
+              </View>
 
-            {analytics?.all_entries && analytics.all_entries.length > 0 ? (
-              analytics.all_entries.map((item: any, index: number) => (
-                <View key={item._id || index} style={[styles.tableRow, { backgroundColor: appTheme.colors.cardBackground, borderBottomColor: appTheme.colors.border }]}>
-                  <Text style={[styles.tableCell, styles.cellSno, { color: appTheme.colors.text }]}>{item.s_no}</Text>
-                  <Text style={[styles.tableCell, styles.cellName, { color: appTheme.colors.text }]} numberOfLines={1}>{item.guest_name}</Text>
-                  <Text style={[styles.tableCell, styles.cellArea, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>{item.area || '-'}</Text>
-                  <Text style={[styles.tableCell, styles.cellAmount, { color: appTheme.colors.secondary }]}>
-                    {item.gift_type === 'cash' ? `\u20b9${(item.amount || 0).toLocaleString()}` : (item.item_description || item.gift_item || '-')}
-                  </Text>
-                  <View style={[styles.tableCellView, styles.cellMode]}>
-                    <View style={[styles.modeBadge, { backgroundColor: item.payment_mode === 'upi' ? '#E8F5E9' : (item.gift_type === 'item' ? '#E3F2FD' : '#FFF3E0') }]}>
-                      <Text style={[styles.modeBadgeText, { color: item.payment_mode === 'upi' ? '#4CAF50' : (item.gift_type === 'item' ? '#2196F3' : '#FF8C00') }]}>
-                        {item.gift_type === 'item' ? 'ITEM' : (item.payment_mode || 'N/A').toUpperCase()}
-                      </Text>
+              {analytics?.all_entries && analytics.all_entries.length > 0 ? (
+                analytics.all_entries.map((item: any, index: number) => (
+                  <View key={item._id || index} style={[styles.tableRow, { backgroundColor: appTheme.colors.cardBackground, borderBottomColor: appTheme.colors.border }]}>
+                    <Text style={[styles.tableCell, styles.cellSno, { color: appTheme.colors.text }]}>{item.s_no}</Text>
+                    <Text style={[styles.tableCell, styles.cellName, { color: appTheme.colors.text }]} numberOfLines={1}>{item.guest_name}</Text>
+                    <Text style={[styles.tableCell, styles.cellArea, { color: appTheme.colors.textSecondary }]} numberOfLines={1}>{item.area || '-'}</Text>
+                    <Text style={[styles.tableCell, styles.cellAmount, { color: appTheme.colors.secondary }]}>
+                      {item.gift_type === 'cash' ? `\u20b9${(item.amount || 0).toLocaleString()}` : (item.item_description || item.gift_item || '-')}
+                    </Text>
+                    <View style={[styles.tableCellView, styles.cellMode]}>
+                      <View style={[styles.modeBadge, { backgroundColor: item.payment_mode === 'upi' ? '#E8F5E9' : (item.gift_type === 'item' ? '#E3F2FD' : '#FFF3E0') }]}>
+                        <Text style={[styles.modeBadgeText, { color: item.payment_mode === 'upi' ? '#4CAF50' : (item.gift_type === 'item' ? '#2196F3' : '#FF8C00') }]}>
+                          {item.gift_type === 'item' ? 'ITEM' : (item.payment_mode || 'N/A').toUpperCase()}
+                        </Text>
+                      </View>
                     </View>
                   </View>
+                ))
+              ) : (
+                <View style={styles.noData}>
+                  <Ionicons name="document-text-outline" size={48} color={appTheme.colors.textSecondary} />
+                  <Text style={[styles.noDataText, { color: appTheme.colors.textSecondary }]}>{t('reports.noData')}</Text>
                 </View>
-              ))
-            ) : (
-              <View style={styles.noData}>
-                <Ionicons name="document-text-outline" size={48} color={appTheme.colors.textSecondary} />
-                <Text style={[styles.noDataText, { color: appTheme.colors.textSecondary }]}>{t('reports.noData')}</Text>
-              </View>
-            )}
-          </View>
+              )}
+            </View>
+          </ScrollView>
 
           {/* 4. Summary Boxes (moved below table) */}
           {dashStats && (
@@ -354,7 +326,7 @@ export default function Reports() {
         </ScrollView>
       )}
 
-      {/* Export Buttons - Fixed at bottom */}
+      {/* Chadivimpulu Book Button - Fixed at bottom */}
       <View style={[styles.exportSection, { backgroundColor: appTheme.colors.cardBackground, borderTopColor: appTheme.colors.border }]}>
         <TouchableOpacity
           style={[styles.exportButton, styles.pdfButton, exporting === 'pdf' && styles.exportButtonDisabled]}
@@ -365,22 +337,8 @@ export default function Reports() {
             <ActivityIndicator color={appTheme.colors.white} size="small" />
           ) : (
             <>
-              <Ionicons name="document-text" size={20} color={appTheme.colors.white} />
-              <Text style={styles.exportButtonText}>{t('reports.exportPDF')}</Text>
-            </>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.exportButton, styles.excelButton, exporting === 'excel' && styles.exportButtonDisabled]}
-          onPress={exportExcel}
-          disabled={!!exporting}
-        >
-          {exporting === 'excel' ? (
-            <ActivityIndicator color={appTheme.colors.white} size="small" />
-          ) : (
-            <>
-              <Ionicons name="document" size={20} color={appTheme.colors.white} />
-              <Text style={styles.exportButtonText}>{t('reports.exportExcel')}</Text>
+              <Ionicons name="book" size={20} color={appTheme.colors.white} />
+              <Text style={styles.exportButtonText}>Chadivimpulu Book</Text>
             </>
           )}
         </TouchableOpacity>
@@ -420,7 +378,8 @@ const styles = StyleSheet.create({
   // Scroll
   scrollArea: { flex: 1 },
   // Table
-  tableContainer: { paddingHorizontal: theme.spacing.md },
+  horizontalScroll: { marginBottom: theme.spacing.md },
+  tableContainer: { minWidth: 520, paddingHorizontal: theme.spacing.md },
   tableHeader: {
     flexDirection: 'row',
     paddingVertical: 10,
@@ -525,7 +484,6 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   pdfButton: { backgroundColor: theme.colors.error },
-  excelButton: { backgroundColor: theme.colors.success },
   exportButtonDisabled: { opacity: 0.6 },
   exportButtonText: { color: theme.colors.white, fontSize: theme.fontSize.md, fontWeight: '600' },
 });

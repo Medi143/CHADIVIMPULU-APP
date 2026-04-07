@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.emergent.giftregister"
+      "bundleIdentifier": "app.emergent.giftregister",
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "Save QR codes and reports to your gallery"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +43,15 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Save QR codes to your photo gallery",
+          "savePhotosPermission": "Save QR codes and reports to gallery",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

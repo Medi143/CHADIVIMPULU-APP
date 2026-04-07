@@ -553,23 +553,20 @@ async def export_pdf(event_id: str):
         
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
-        width_page = letter[0]
+        w = letter[0]
+        h = letter[1]
         
-        # === HEADER ===
-        p.setFont("Helvetica-Bold", 20)
-        p.drawCentredString(width_page / 2, 750, "Chadivimpulu - Gift Report")
+        # Color constants
+        MAROON = colors.Color(0.55, 0.09, 0.09)
+        GOLD = colors.Color(1.0, 0.84, 0.0)
+        DARK_BLUE = colors.Color(0.10, 0.23, 0.42)
+        LIGHT_GOLD_BG = colors.Color(1.0, 0.97, 0.85)
+        LIGHT_GRAY = colors.Color(0.96, 0.96, 0.96)
         
-        p.setFont("Helvetica-Bold", 14)
-        p.drawCentredString(width_page / 2, 725, event.get('name', 'Event'))
-        
-        p.setFont("Helvetica", 10)
-        p.drawString(50, 700, f"Event Date: {event.get('date', 'N/A')}")
-        p.drawString(300, 700, f"Location: {event.get('location', 'N/A')}")
-        p.drawString(50, 685, f"Organizer: {event.get('family_head_name', 'N/A')}")
-        p.drawString(300, 685, f"Event Type: {event.get('event_type', 'N/A').title()}")
-        
-        # === SUMMARY ===
+        # === Compute stats ===
+        total_guests = len(gifts)
         total_cash = sum(g.get("amount", 0) or 0 for g in gifts if g.get("gift_type") == "cash")
+        total_items = sum(1 for g in gifts if g.get("gift_type") == "item")
         bride_gifts = [g for g in gifts if g.get("side") == "bride"]
         groom_gifts = [g for g in gifts if g.get("side") == "groom"]
         bride_cash = sum(g.get("amount", 0) or 0 for g in bride_gifts if g.get("gift_type") == "cash")
@@ -577,78 +574,171 @@ async def export_pdf(event_id: str):
         cash_count = sum(1 for g in gifts if g.get("payment_mode") == "cash")
         upi_count = sum(1 for g in gifts if g.get("payment_mode") == "upi")
         
-        # Divider line
-        p.setStrokeColor(colors.Color(0.8, 0.8, 0.8))
-        p.line(50, 670, width_page - 50, 670)
+        event_name = event.get('name', 'Event')
+        event_type = event.get('event_type', 'event').title()
+        event_date = event.get('date', 'N/A')
+        event_location = event.get('location', 'N/A')
         
-        p.setFont("Helvetica-Bold", 12)
-        p.drawString(50, 650, "Summary")
+        def draw_footer(canvas_obj):
+            canvas_obj.setFont("Helvetica", 8)
+            canvas_obj.setFillColor(colors.Color(0.5, 0.5, 0.5))
+            canvas_obj.drawCentredString(w / 2, 25, "\u00a92026 Chadivimpulu\u2122. All rights reserved. \u2013 www.chadivimpulu.com")
+            canvas_obj.setFillColor(colors.black)
         
-        p.setFont("Helvetica", 10)
-        p.drawString(50, 632, f"Total Guests: {len(gifts)}")
-        p.drawString(200, 632, f"Total Cash: Rs.{total_cash:,.2f}")
-        p.drawString(400, 632, f"Items: {sum(1 for g in gifts if g.get('gift_type') == 'item')}")
+        def draw_page_header(canvas_obj, y_pos):
+            # Maroon header bar
+            canvas_obj.setFillColor(MAROON)
+            canvas_obj.rect(0, y_pos, w, 50, fill=True, stroke=False)
+            # Gold accent line
+            canvas_obj.setFillColor(GOLD)
+            canvas_obj.rect(0, y_pos - 4, w, 4, fill=True, stroke=False)
+            # Title text
+            canvas_obj.setFillColor(colors.white)
+            canvas_obj.setFont("Helvetica-Bold", 22)
+            canvas_obj.drawCentredString(w / 2, y_pos + 16, "Chadivimpulu\u2122")
+            canvas_obj.setFillColor(colors.black)
+            return y_pos - 10
         
-        p.drawString(50, 616, f"Bride Side: {len(bride_gifts)} guests, Rs.{bride_cash:,.2f}")
-        p.drawString(300, 616, f"Groom Side: {len(groom_gifts)} guests, Rs.{groom_cash:,.2f}")
+        # ======== PAGE 1 ========
+        y = draw_page_header(p, h - 50)
         
-        p.drawString(50, 600, f"Cash Payments: {cash_count}")
-        p.drawString(200, 600, f"UPI Payments: {upi_count}")
+        # Wedding Information Box
+        y -= 15
+        # Box background
+        p.setFillColor(LIGHT_GOLD_BG)
+        p.roundRect(40, y - 80, w - 80, 80, 8, fill=True, stroke=False)
+        # Maroon border
+        p.setStrokeColor(MAROON)
+        p.setLineWidth(1.5)
+        p.roundRect(40, y - 80, w - 80, 80, 8, fill=False, stroke=True)
         
-        # Divider line
-        p.line(50, 588, width_page - 50, 588)
+        # Wedding Info title
+        p.setFillColor(MAROON)
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(55, y - 20, f"{event_type} Information")
         
-        # === TABLE HEADER ===
-        y = 570
-        p.setFillColor(colors.Color(0.16, 0.24, 0.38))
-        p.rect(45, y - 5, width_page - 90, 20, fill=True, stroke=False)
+        # Info details
+        p.setFillColor(DARK_BLUE)
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(55, y - 40, event_name)
         
-        p.setFillColor(colors.white)
+        p.setFillColor(colors.Color(0.3, 0.3, 0.3))
+        p.setFont("Helvetica", 9)
+        p.drawString(55, y - 56, f"Date: {event_date}")
+        p.drawString(250, y - 56, f"Location: {event_location}")
+        p.drawString(55, y - 70, f"Organizer: {event.get('family_head_name', 'N/A')}")
+        p.drawString(250, y - 70, f"Total Guests: {total_guests}")
+        
+        y -= 100
+        
+        # === SUMMARY CARDS ===
+        y -= 10
+        p.setFillColor(MAROON)
+        p.setFont("Helvetica-Bold", 13)
+        p.drawString(50, y, "Summary")
+        y -= 20
+        
+        card_w = (w - 120) / 3
+        card_h = 50
+        cards_data = [
+            ("Total Guests", str(total_guests)),
+            ("Total Cash", f"\u20b9{total_cash:,.0f}"),
+            ("Total Items", str(total_items)),
+            ("Cash Payments", str(cash_count)),
+            ("UPI Payments", str(upi_count)),
+            ("Bride / Groom", f"{len(bride_gifts)} / {len(groom_gifts)}"),
+        ]
+        
+        for i, (label, value) in enumerate(cards_data):
+            col = i % 3
+            row = i // 3
+            cx = 50 + col * (card_w + 10)
+            cy = y - row * (card_h + 8)
+            
+            # Card background
+            p.setFillColor(GOLD)
+            p.roundRect(cx, cy - card_h, card_w, card_h, 6, fill=True, stroke=False)
+            
+            # Card text
+            p.setFillColor(DARK_BLUE)
+            p.setFont("Helvetica-Bold", 13)
+            p.drawCentredString(cx + card_w / 2, cy - 22, value)
+            p.setFont("Helvetica", 8)
+            p.setFillColor(colors.Color(0.2, 0.2, 0.2))
+            p.drawCentredString(cx + card_w / 2, cy - 38, label)
+        
+        y -= (2 * (card_h + 8)) + 15
+        
+        # === GUEST ENTRIES TABLE ===
+        p.setFillColor(MAROON)
+        p.setFont("Helvetica-Bold", 13)
+        p.drawString(50, y, "Guest Entries")
+        y -= 20
+        
+        # Table header
+        col_positions = [50, 80, 195, 290, 380, 480]
+        col_labels = ["S.No", "Guest Name", "Area", "Amount / Item", "Payment", "Side"]
+        
+        p.setFillColor(GOLD)
+        p.rect(45, y - 5, w - 90, 20, fill=True, stroke=False)
+        
+        p.setFillColor(DARK_BLUE)
         p.setFont("Helvetica-Bold", 9)
-        p.drawString(50, y, "S.No")
-        p.drawString(80, y, "Guest Name")
-        p.drawString(200, y, "Area")
-        p.drawString(290, y, "Side")
-        p.drawString(340, y, "Amount")
-        p.drawString(420, y, "Payment")
-        p.drawString(490, y, "Date")
+        for i, label in enumerate(col_labels):
+            p.drawString(col_positions[i], y, label)
         
         p.setFillColor(colors.black)
         p.setFont("Helvetica", 8)
-        y -= 22
+        y -= 20
         
         for idx, gift in enumerate(gifts):
-            if y < 50:
+            if y < 55:
+                draw_footer(p)
                 p.showPage()
+                # New page header
+                ny = draw_page_header(p, h - 50)
+                y = ny - 20
+                # Re-draw table header
+                p.setFillColor(GOLD)
+                p.rect(45, y - 5, w - 90, 20, fill=True, stroke=False)
+                p.setFillColor(DARK_BLUE)
+                p.setFont("Helvetica-Bold", 9)
+                for i, label in enumerate(col_labels):
+                    p.drawString(col_positions[i], y, label)
+                p.setFillColor(colors.black)
                 p.setFont("Helvetica", 8)
-                y = 750
+                y -= 20
             
-            # Alternate row color
+            # Alternating row color
             if idx % 2 == 0:
-                p.setFillColor(colors.Color(0.96, 0.96, 0.96))
-                p.rect(45, y - 4, width_page - 90, 16, fill=True, stroke=False)
+                p.setFillColor(LIGHT_GRAY)
+                p.rect(45, y - 4, w - 90, 16, fill=True, stroke=False)
                 p.setFillColor(colors.black)
             
-            p.drawString(50, y, str(gift.get("s_no", "")))
-            p.drawString(80, y, str(gift.get("guest_name", ""))[:18])
-            p.drawString(200, y, str(gift.get("area", ""))[:14])
-            p.drawString(290, y, str(gift.get("side", "")).title()[:10])
+            p.drawString(col_positions[0], y, str(gift.get("s_no", idx + 1)))
+            p.drawString(col_positions[1], y, str(gift.get("guest_name", ""))[:18])
+            p.drawString(col_positions[2], y, str(gift.get("area", ""))[:14])
+            
             if gift.get("gift_type") == "cash":
-                p.drawString(340, y, f"Rs.{gift.get('amount', 0):,.2f}")
+                p.drawString(col_positions[3], y, f"\u20b9{gift.get('amount', 0):,.0f}")
             else:
-                p.drawString(340, y, str(gift.get("item_description", "Item"))[:12])
-            p.drawString(420, y, str(gift.get("payment_mode", "")).upper()[:10])
-            ts = gift.get("timestamp")
-            if ts:
-                p.drawString(490, y, ts.strftime("%d/%m/%Y") if hasattr(ts, 'strftime') else str(ts)[:10])
+                item_desc = gift.get("item_description") or gift.get("gift_item") or "Item"
+                p.drawString(col_positions[3], y, str(item_desc)[:16])
+            
+            mode = str(gift.get("payment_mode", "")).upper()
+            if gift.get("gift_type") == "item":
+                mode = "ITEM"
+            p.drawString(col_positions[4], y, mode[:10])
+            p.drawString(col_positions[5], y, str(gift.get("side", "")).title()[:10])
+            
             y -= 16
         
+        draw_footer(p)
         p.save()
         pdf_base64 = base64.b64encode(buffer.getvalue()).decode()
         
-        # Generate safe file name
-        event_name = event.get('name', 'Event').replace(' ', '_')[:30]
-        return {"success": True, "pdf_data": pdf_base64, "file_name": f"Chadivimpulu_{event_name}.pdf"}
+        safe_name = event_name.replace(' ', '_')[:30]
+        return {"success": True, "pdf_data": pdf_base64, "file_name": f"Chadivimpulu_{safe_name}.pdf"}
     except HTTPException:
         raise
     except Exception as e:
