@@ -74,7 +74,7 @@ export default function Login() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to</Text>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu\u2122</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary }]}>{'Chadivimpulu\u2122'}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>Digital Wed Gift Registry</Text>
           </View>
 

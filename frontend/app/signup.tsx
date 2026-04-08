@@ -78,7 +78,7 @@ export default function SignUp() {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu\u2122</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary }]}>{'Chadivimpulu\u2122'}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>Create Your Account</Text>
           </View>
 
