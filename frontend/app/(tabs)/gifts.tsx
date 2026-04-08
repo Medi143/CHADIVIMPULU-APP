@@ -137,15 +137,15 @@ export default function Gifts() {
     }
   };
 
-  const renderGiftItem = ({ item }: any) => (
-    <View style={styles.giftCard}>
+  const renderGiftItem = ({ item, index }: any) => (
+    <View style={[styles.giftCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
       <View style={styles.giftHeader}>
-        <View>
-          <Text style={styles.guestName}>{item.guest_name}</Text>
-          {item.mobile && <Text style={styles.mobile}>{item.mobile}</Text>}
+        <View style={styles.snoCircle}>
+          <Text style={[styles.snoText, { color: theme.colors.white }]}>{item.s_no || (index + 1)}</Text>
         </View>
-        <View style={styles.sideBadge}>
-          <Text style={styles.sideText}>{item.side}</Text>
+        <View style={styles.giftHeaderInfo}>
+          <Text style={[styles.guestName, { color: theme.colors.text }]}>{item.guest_name}</Text>
+          {item.mobile && <Text style={[styles.mobile, { color: theme.colors.textSecondary }]}>{item.mobile}</Text>}
         </View>
       </View>
 
@@ -156,7 +156,7 @@ export default function Gifts() {
             size={20}
             color={theme.colors.secondary}
           />
-          <Text style={styles.detailText}>
+          <Text style={[styles.detailText, { color: theme.colors.secondary }]}>
             {item.gift_type === 'cash'
               ? `₹${item.amount?.toLocaleString()}`
               : item.item_description}
@@ -166,14 +166,14 @@ export default function Gifts() {
         {item.payment_mode && (
           <View style={styles.detailRow}>
             <Ionicons name="card-outline" size={20} color={theme.colors.textSecondary} />
-            <Text style={styles.paymentMode}>{item.payment_mode.toUpperCase()}</Text>
+            <Text style={[styles.paymentMode, { color: theme.colors.textSecondary }]}>{item.payment_mode.toUpperCase()}</Text>
           </View>
         )}
       </View>
 
-      {item.notes && <Text style={styles.notes}>{item.notes}</Text>}
+      {item.notes && <Text style={[styles.notes, { color: theme.colors.textSecondary }]}>{item.notes}</Text>}
 
-      <Text style={styles.timestamp}>
+      <Text style={[styles.timestamp, { color: theme.colors.textSecondary }]}>
         Added by {item.added_by} • {new Date(item.timestamp).toLocaleDateString()}
       </Text>
     </View>
@@ -410,31 +410,32 @@ const styles = StyleSheet.create({
   },
   giftHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: theme.spacing.sm,
+  },
+  snoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  snoText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: 'bold',
+  },
+  giftHeaderInfo: {
+    flex: 1,
   },
   guestName: {
     fontSize: theme.fontSize.lg,
     fontWeight: '600',
-    color: theme.colors.text,
   },
   mobile: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
-  },
-  sideBadge: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-  },
-  sideText: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textTransform: 'uppercase',
   },
   giftDetails: {
     marginTop: theme.spacing.sm,

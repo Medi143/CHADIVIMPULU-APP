@@ -12,6 +12,8 @@ function InnerLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="forgot-password" />
         <Stack.Screen name="create-event" />
         <Stack.Screen name="welcome" />
         <Stack.Screen name="gift-entry" />

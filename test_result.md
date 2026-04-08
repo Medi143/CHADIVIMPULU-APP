@@ -261,8 +261,111 @@ backend:
           agent: "testing"
           comment: "Gift deletion working correctly. Successfully deleted test gift entry with proper response confirmation."
 
+  - task: "New Auth - User Registration"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "POST /api/auth/register endpoint with name, identifier (phone/email), password. Hashes with bcrypt. Checks for existing users."
+        - working: true
+          agent: "testing"
+          comment: "✅ Registration endpoint working perfectly. Successfully registered new user with unique phone number. Validation working: rejects duplicate registration, short names (<2 chars), short passwords (<6 chars). Returns proper success message and error responses."
+
+  - task: "New Auth - Password Login"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "POST /api/auth/login endpoint with identifier (phone/email), password. Validates bcrypt hash. Returns user data and session token."
+        - working: true
+          agent: "testing"
+          comment: "✅ Login endpoint working perfectly. Successfully authenticates users with correct credentials. Returns user data (without password), session token, and success message. Properly validates wrong passwords and handles authentication flow."
+
+  - task: "New Auth - Reset Password"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "POST /api/auth/reset-password endpoint with phone and new_password. Looks up user by phone, updates bcrypt hash."
+        - working: true
+          agent: "testing"
+          comment: "✅ Password reset endpoint working perfectly. Successfully updates user password with bcrypt hashing. Validates password length (minimum 6 characters). After reset, user can login with new password. Complete auth flow tested: register → login → reset password → login with new password."
+
 frontend:
-  # Frontend testing not performed as per testing agent instructions
+  - task: "Login Page with Password"
+    implemented: true
+    working: "NA"
+    file: "login.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Login screen with identifier + password fields, show/hide password, Terms checkbox, Forgot Password and Signup links."
+
+  - task: "Signup Page"
+    implemented: true
+    working: "NA"
+    file: "signup.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Registration screen with name, identifier, password, confirm password fields. Calls /api/auth/register."
+
+  - task: "Forgot Password Page"
+    implemented: true
+    working: "NA"
+    file: "forgot-password.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Reset password screen with phone, new password, confirm password. Calls /api/auth/reset-password."
+
+  - task: "Reports Page - Remove Bride/Groom Side Boxes"
+    implemented: true
+    working: "NA"
+    file: "reports.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Removed sideComparisonRow with Bride's Side and Groom's Side summary boxes from Reports page."
+
+  - task: "Gifts Page - Add S.No and Remove Category Tags"
+    implemented: true
+    working: "NA"
+    file: "gifts.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added S.No circle badge to each gift card. Removed GENERAL/BRIDE/GROOM category tags (sideBadge). Clean minimal design."
 
 metadata:
   created_by: "testing_agent"
@@ -274,17 +377,21 @@ test_plan:
   current_focus: []
   stuck_tasks: []
   test_all: false
-  test_priority: "completed"
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
       message: "Comprehensive backend testing completed successfully. All 17 tests passed with 100% success rate."
     - agent: "main"
       message: "Major update: 1) Gift entry now includes Side selector (bride/groom). 2) PDF export improved with event details header, summary (bride/groom breakdown), colored table with alternating rows, file named as Chadivimpulu_<EventName>.pdf. 3) Excel export improved with Summary sheet + Gift Entries sheet, proper columns (Name, Area, Amount, Payment Mode, Side, Date), file named Chadivimpulu_<EventName>.xlsx. 4) All data stored in MongoDB. Please test: POST /api/gifts with side field, GET /api/export/pdf/{event_id} for improved PDF, GET /api/export/excel/{event_id} for improved Excel."
+    - agent: "main"
+      message: "NEW AUTH ENDPOINTS ADDED: 1) POST /api/auth/register - register with name, identifier (phone/email), password. 2) POST /api/auth/login - login with identifier + password, returns user data and session token. 3) POST /api/auth/reset-password - reset password with phone + new_password. All use bcrypt for password hashing. Test credentials: register with identifier=9876543210, name=Test User, password=Test@123. Then login with same identifier and password. Old instant-login endpoint still exists but new password auth is the primary flow."
     - agent: "testing"
       message: "✅ COMPREHENSIVE FLOW TESTING COMPLETED (8/8 tests passed, 100% success rate): Full data flow test executed successfully with instant login (phone: 9876543210, name: Flow Test User, role: admin) → Event creation with extended fields → 3 gift entries with different sides (bride/groom), amounts (116, 516, 2016), payment modes (cash/upi) → All data correctly linked → PDF export generates valid base64 with proper file naming (Chadivimpulu_*.pdf) → Excel export generates valid base64 with proper file naming (Chadivimpulu_*.xlsx) → Reports endpoint returns all_entries with s_no, side, payment_mode fields. All critical endpoints working perfectly."
     - agent: "testing"
       message: "✅ NEW USER PROFILE & STAFF ENDPOINTS TESTING COMPLETED (9/9 tests passed, 100% success rate): 1) GET /api/users/{user_id} - User profile retrieval working perfectly with all required fields. 2) PUT /api/users/{user_id} - Profile update working with name, email, phone, profile_photo fields. 3) DELETE /api/users/{user_id} - Account deletion with cascade working perfectly (deletes events, gifts, staff, counters). 4) POST /api/staff - Staff addition working with phone, event_id, role. 5) GET /api/staff/{event_id} - Staff list retrieval working with user details. 6) DELETE /api/staff/{staff_id} - Staff removal working and verified. All new endpoints fully functional and tested with real data."
+    - agent: "testing"
+      message: "✅ NEW AUTHENTICATION ENDPOINTS TESTING COMPLETED (3/3 tests passed, 100% success rate): 1) POST /api/auth/register - Registration working perfectly with validation (name ≥2 chars, identifier ≥5 chars, password ≥6 chars, duplicate prevention). 2) POST /api/auth/login - Login working perfectly with bcrypt validation, returns user data + session token. 3) POST /api/auth/reset-password - Password reset working perfectly with bcrypt hashing. Complete auth flow tested: register → login → reset password → login with new password. All endpoints handle validation and error cases correctly."
 
   - task: "Improved PDF Export with Event Details and Summary"
     implemented: true

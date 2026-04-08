@@ -197,18 +197,7 @@ export default function Reports() {
                 </View>
               </View>
 
-              <View style={styles.sideComparisonRow}>
-                <View style={[styles.sideCompCard, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
-                  <Text style={[styles.sideCompTitle, { color: appTheme.colors.text }]}>{t('reports.brideSide')}</Text>
-                  <Text style={[styles.sideCompGuests, { color: appTheme.colors.textSecondary }]}>{dashStats.bride_side?.guests || 0} {t('reports.guests')}</Text>
-                  <Text style={[styles.sideCompCash, { color: appTheme.colors.secondary }]}>{'\u20b9'}{(dashStats.bride_side?.cash || 0).toLocaleString()}</Text>
-                </View>
-                <View style={[styles.sideCompCard, { backgroundColor: appTheme.colors.cardBackground, borderColor: appTheme.colors.border }]}>
-                  <Text style={[styles.sideCompTitle, { color: appTheme.colors.text }]}>{t('reports.groomSide')}</Text>
-                  <Text style={[styles.sideCompGuests, { color: appTheme.colors.textSecondary }]}>{dashStats.groom_side?.guests || 0} {t('reports.guests')}</Text>
-                  <Text style={[styles.sideCompCash, { color: appTheme.colors.secondary }]}>{'\u20b9'}{(dashStats.groom_side?.cash || 0).toLocaleString()}</Text>
-                </View>
-              </View>
+              {/* Bride/Groom side boxes removed per user request */}
             </View>
           )}
 
