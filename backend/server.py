@@ -19,6 +19,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 import random
 import string
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -109,7 +110,118 @@ class UpdateProfileRequest(BaseModel):
     email: Optional[str] = None
     profile_photo: Optional[str] = None
 
+class RegisterRequest(BaseModel):
+    name: str
+    identifier: str  # phone or email
+    password: str
+
+class LoginRequest(BaseModel):
+    identifier: str  # phone or email
+    password: str
+
+class ResetPasswordRequest(BaseModel):
+    phone: str
+    new_password: str
+
 # ==================== AUTH ENDPOINTS ====================
+@api_router.post("/auth/register")
+async def register_user(request: RegisterRequest):
+    try:
+        if not request.name or len(request.name.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Name must be at least 2 characters")
+        if not request.identifier or len(request.identifier.strip()) < 5:
+            raise HTTPException(status_code=400, detail="Mobile number or email is required")
+        if not request.password or len(request.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+        identifier = request.identifier.strip()
+        # Check if user already exists
+        existing = await db.users.find_one({
+            "$or": [{"phone": identifier}, {"email": identifier}]
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="An account with this mobile/email already exists")
+        
+        # Hash password
+        hashed_pw = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        # Determine if identifier is email or phone
+        is_email = '@' in identifier
+        user_doc = {
+            "name": request.name.strip(),
+            "phone": identifier if not is_email else "",
+            "email": identifier if is_email else "",
+            "password": hashed_pw,
+            "role": "admin",
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        
+        result = await db.users.insert_one(user_doc)
+        logger.info(f"New user registered: {request.name} ({identifier})")
+        return {"success": True, "message": "Registration successful. Please sign in."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in registration: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/auth/login")
+async def login_user(request: LoginRequest):
+    try:
+        identifier = request.identifier.strip()
+        if not identifier:
+            raise HTTPException(status_code=400, detail="Mobile number or email is required")
+        if not request.password:
+            raise HTTPException(status_code=400, detail="Password is required")
+        
+        # Find user by phone or email
+        user = await db.users.find_one({
+            "$or": [{"phone": identifier}, {"email": identifier}]
+        })
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="No account found with this mobile/email")
+        
+        stored_pw = user.get("password", "")
+        if not stored_pw or not bcrypt.checkpw(request.password.encode('utf-8'), stored_pw.encode('utf-8')):
+            raise HTTPException(status_code=401, detail="Incorrect password")
+        
+        import hashlib, time
+        session_token = hashlib.sha256(f"{identifier}_{time.time()}".encode()).hexdigest()
+        user_data = serialize_doc(user)
+        user_data.pop("password", None)
+        
+        logger.info(f"User logged in: {user.get('name')} ({identifier})")
+        return {"success": True, "user": user_data, "token": session_token, "message": "Login successful"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in login: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    try:
+        if not request.phone or len(request.phone.strip()) < 10:
+            raise HTTPException(status_code=400, detail="Valid mobile number is required")
+        if not request.new_password or len(request.new_password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+        phone = request.phone.strip()
+        user = await db.users.find_one({"phone": phone})
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found with this mobile number")
+        
+        hashed_pw = bcrypt.hashpw(request.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        await db.users.update_one({"phone": phone}, {"$set": {"password": hashed_pw}})
+        
+        logger.info(f"Password reset for: {phone}")
+        return {"success": True, "message": "Password updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in password reset: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 @api_router.post("/auth/instant-login")
 async def instant_login(request: InstantLoginRequest):
     try:

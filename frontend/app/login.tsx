@@ -14,7 +14,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -23,49 +22,48 @@ export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
   const { theme } = useTheme();
-  const { t } = useLanguage();
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!phone || phone.length < 10) {
-      Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number');
+    if (!identifier.trim()) {
+      Alert.alert('Required', 'Please enter your mobile number or email');
       return;
     }
-    if (!name || name.trim().length < 2) {
-      Alert.alert('Name Required', 'Please enter your name to continue');
+    if (!password) {
+      Alert.alert('Required', 'Please enter your password');
       return;
     }
     if (!agreedToTerms) {
-      Alert.alert('Terms Required', 'Please agree to the Terms & Conditions to continue');
+      Alert.alert('Terms Required', 'Please agree to the Terms & Conditions');
       return;
     }
 
     setLoading(true);
     try {
-      const formattedPhone = phone.startsWith('+91') ? phone : `+91${phone}`;
-      const response = await fetch(`${BACKEND_URL}/api/auth/instant-login`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formattedPhone, name: name.trim(), role: 'admin' }),
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
       });
       const data = await response.json();
       if (data.success) {
         await login(data.user);
         router.replace('/(tabs)');
       } else {
-        throw new Error(data.message || 'Login failed');
+        Alert.alert('Login Failed', data.detail || data.message || 'Invalid credentials');
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Unable to login. Please check your connection and try again.');
+      Alert.alert('Login Failed', 'Unable to connect. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const canContinue = phone.length >= 10 && name.trim().length >= 2 && agreedToTerms;
+  const canLogin = identifier.trim().length >= 5 && password.length >= 1 && agreedToTerms;
 
   return (
     <KeyboardAvoidingView
@@ -75,75 +73,71 @@ export default function Login() {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>{t('login.welcomeTo')}</Text>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>{t('login.subtitle')}</Text>
-          </View>
-
-          <View style={[styles.infoBox, { backgroundColor: theme.colors.cardBackground, borderLeftColor: theme.colors.primary }]}>
-            <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
-            <Text style={[styles.infoText, { color: theme.colors.text }]}>{t('login.info')}</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary }]}>Chadivimpulu\u2122</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>Digital Wed Gift Registry</Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={[styles.label, { color: theme.colors.text }]}>{t('login.phone')}</Text>
-            <View style={[styles.phoneInput, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={[styles.countryCode, { color: theme.colors.text }]}>+91</Text>
-              <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
-                placeholder={t('login.phonePlaceholder')}
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-                maxLength={10}
-                placeholderTextColor={theme.colors.textSecondary}
-                editable={!loading}
-                autoFocus
-              />
-            </View>
-
-            <Text style={[styles.label, { color: theme.colors.text }]}>{t('login.name')}</Text>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Mobile Number or Email *</Text>
             <TextInput
-              style={[styles.input, styles.fullInput, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border, color: theme.colors.text }]}
-              placeholder={t('login.namePlaceholder')}
-              value={name}
-              onChangeText={setName}
+              style={[styles.textInput, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border, color: theme.colors.text }]}
+              placeholder="Enter mobile number or email"
+              value={identifier}
+              onChangeText={setIdentifier}
               placeholderTextColor={theme.colors.textSecondary}
               editable={!loading}
-              autoCapitalize="words"
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
+
+            <Text style={[styles.label, { color: theme.colors.text }]}>Password *</Text>
+            <View style={[styles.passwordRow, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <TextInput
+                style={[styles.passwordInput, { color: theme.colors.text }]}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholderTextColor={theme.colors.textSecondary}
+                editable={!loading}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={() => router.push('/forgot-password')} style={styles.forgotRow}>
+              <Text style={[styles.forgotText, { color: theme.colors.primary }]}>Forgot Password?</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.termsRow} onPress={() => setAgreedToTerms(!agreedToTerms)} activeOpacity={0.7} disabled={loading}>
               <View style={[styles.checkbox, { borderColor: theme.colors.border, backgroundColor: theme.colors.cardBackground }, agreedToTerms && { backgroundColor: theme.colors.secondary, borderColor: theme.colors.secondary }]}>
                 {agreedToTerms && <Ionicons name="checkmark" size={16} color={theme.colors.white} />}
               </View>
               <Text style={[styles.termsText, { color: theme.colors.text }]}>
-                {t('login.terms')}{' '}
-                <Text style={[styles.termsLink, { color: theme.colors.primary }]}>{t('login.termsLink')}</Text>
+                I agree to the{' '}
+                <Text style={[styles.termsLink, { color: theme.colors.primary }]}>Terms & Conditions</Text>
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.colors.secondary }, (!canContinue || loading) && styles.buttonDisabled]}
+              style={[styles.button, { backgroundColor: theme.colors.secondary }, (!canLogin || loading) && styles.buttonDisabled]}
               onPress={handleLogin}
-              disabled={!canContinue || loading}
+              disabled={!canLogin || loading}
             >
               {loading ? (
-                <View style={styles.buttonContent}>
-                  <ActivityIndicator color={theme.colors.white} />
-                  <Text style={[styles.buttonText, { color: theme.colors.white }]}>  {t('login.loggingIn')}</Text>
-                </View>
+                <ActivityIndicator color={theme.colors.white} />
               ) : (
-                <View style={styles.buttonContent}>
-                  <Text style={[styles.buttonText, { color: theme.colors.white }]}>{t('login.continue')}</Text>
-                  <Ionicons name="arrow-forward" size={20} color={theme.colors.white} />
-                </View>
+                <Text style={[styles.buttonText, { color: theme.colors.white }]}>Login</Text>
               )}
             </TouchableOpacity>
 
-            <View style={styles.privacyNote}>
-              <Ionicons name="lock-closed" size={16} color={theme.colors.textSecondary} />
-              <Text style={[styles.privacyText, { color: theme.colors.textSecondary }]}>{t('login.privacyNote')}</Text>
+            <View style={styles.signupRow}>
+              <Text style={[styles.signupHint, { color: theme.colors.textSecondary }]}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => router.push('/signup')}>
+                <Text style={[styles.signupLink, { color: theme.colors.primary }]}>Sign Up</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -157,25 +151,25 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1 },
   content: { flex: 1, padding: 24, justifyContent: 'center' },
   header: { marginBottom: 32 },
-  title: { fontSize: 24, textAlign: 'center' },
-  appName: { fontSize: 40, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 16 },
-  infoBox: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 32, borderLeftWidth: 4 },
-  infoText: { flex: 1, fontSize: 14, marginLeft: 8 },
+  title: { fontSize: 22, textAlign: 'center' },
+  appName: { fontSize: 38, fontWeight: 'bold', textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 15, textAlign: 'center' },
   form: { width: '100%' },
-  label: { fontSize: 16, fontWeight: '600', marginBottom: 8, marginTop: 16 },
-  phoneInput: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 2, paddingHorizontal: 16 },
-  countryCode: { fontSize: 18, fontWeight: '600', marginRight: 8 },
-  input: { flex: 1, height: 50, fontSize: 18 },
-  fullInput: { borderRadius: 12, borderWidth: 2, paddingHorizontal: 16 },
-  termsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 32, paddingVertical: 8 },
-  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  termsText: { flex: 1, fontSize: 14 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  textInput: { height: 50, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16, fontSize: 16 },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 16 },
+  passwordInput: { flex: 1, height: 50, fontSize: 16 },
+  eyeButton: { padding: 8 },
+  forgotRow: { alignSelf: 'flex-end', marginTop: 10 },
+  forgotText: { fontSize: 14, fontWeight: '600' },
+  termsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, paddingVertical: 6 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  termsText: { flex: 1, fontSize: 13 },
   termsLink: { fontWeight: '600', textDecorationLine: 'underline' },
-  button: { height: 56, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32, elevation: 2 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonContent: { flexDirection: 'row', alignItems: 'center' },
-  buttonText: { fontSize: 18, fontWeight: '600' },
-  privacyNote: { flexDirection: 'row', alignItems: 'center', marginTop: 24, paddingHorizontal: 16 },
-  privacyText: { flex: 1, fontSize: 12, marginLeft: 8, textAlign: 'center' },
+  button: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 24, elevation: 2 },
+  buttonDisabled: { opacity: 0.5 },
+  buttonText: { fontSize: 18, fontWeight: '700' },
+  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  signupHint: { fontSize: 14 },
+  signupLink: { fontSize: 14, fontWeight: '700' },
 });
