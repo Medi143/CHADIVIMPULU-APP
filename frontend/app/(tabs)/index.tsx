@@ -97,11 +97,11 @@ export default function Home() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { backgroundColor: theme.colors.secondary, paddingTop: insets.top }]}>
           <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.loadingBody}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </View>
@@ -242,11 +242,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  loadingContainer: {
+  loadingBody: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',

@@ -74,9 +74,9 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Header - extends behind status bar */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <Text style={styles.headerTitle}>Chadivimpulu™</Text>
         <TouchableOpacity onPress={handleGoToDashboard} style={styles.settingsButton}>
           <Ionicons name="grid-outline" size={22} color={theme.colors.white} />
