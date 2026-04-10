@@ -368,6 +368,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.white,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   giftCard: {
     backgroundColor: theme.colors.white,

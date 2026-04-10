@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,7 +26,6 @@ const EVENT_TYPES = [
   { label: 'Select event type', value: '' },
   { label: 'Wedding', value: 'wedding' },
   { label: 'Housewarming', value: 'housewarming' },
-  { label: 'Engagement', value: 'engagement' },
   { label: 'Baby Shower', value: 'babyshower' },
   { label: 'Naming Ceremony', value: 'naming' },
   { label: 'Birthday', value: 'birthday' },
@@ -47,6 +45,7 @@ export default function CreateEvent() {
   const insets = useSafeAreaInsets();
   const { user, login, setActiveEvent } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showEventTypePicker, setShowEventTypePicker] = useState(false);
 
   // Form state
   const [eventType, setEventType] = useState('');
@@ -249,17 +248,54 @@ export default function CreateEvent() {
 
           {/* Event Type Dropdown */}
           <Text style={styles.label}>Event Type *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={eventType}
-              onValueChange={setEventType}
-              style={styles.picker}
-            >
-              {EVENT_TYPES.map((type) => (
-                <Picker.Item key={type.value} label={type.label} value={type.value} />
+          <TouchableOpacity
+            style={styles.dropdownTrigger}
+            onPress={() => setShowEventTypePicker(!showEventTypePicker)}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.dropdownTriggerText,
+              !eventType && { color: theme.colors.textSecondary }
+            ]}>
+              {eventType
+                ? EVENT_TYPES.find(t => t.value === eventType)?.label || 'Select event type'
+                : 'Select event type'}
+            </Text>
+            <Ionicons
+              name={showEventTypePicker ? 'chevron-up' : 'chevron-down'}
+              size={22}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {showEventTypePicker && (
+            <View style={styles.dropdownList}>
+              {EVENT_TYPES.filter(t => t.value !== '').map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.dropdownItem,
+                    eventType === type.value && styles.dropdownItemSelected,
+                  ]}
+                  onPress={() => {
+                    setEventType(type.value);
+                    setShowEventTypePicker(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.dropdownItemText,
+                    eventType === type.value && styles.dropdownItemTextSelected,
+                  ]}>
+                    {type.label}
+                  </Text>
+                  {eventType === type.value && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.secondary} />
+                  )}
+                </TouchableOpacity>
               ))}
-            </Picker>
-          </View>
+            </View>
+          )}
 
           {eventType ? (
             <>
@@ -664,14 +700,49 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.text,
   },
-  pickerContainer: {
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: theme.colors.cardBackground,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
   },
-  picker: {
-    height: 50,
+  dropdownTriggerText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  dropdownList: {
+    marginTop: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.cardBackground,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.cardBackground,
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#EEF2FF',
+  },
+  dropdownItemText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+  },
+  dropdownItemTextSelected: {
+    color: theme.colors.secondary,
+    fontWeight: '600',
   },
   uploadButton: {
     backgroundColor: theme.colors.cardBackground,
