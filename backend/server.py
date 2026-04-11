@@ -20,6 +20,7 @@ from openpyxl.styles import Font, PatternFill
 import random
 import string
 import bcrypt
+import re
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -87,6 +88,7 @@ class GiftEntryRequest(BaseModel):
     payment_mode: Optional[str] = "cash"
     notes: Optional[str] = None
     added_by: Optional[str] = None
+    remote_gift: Optional[bool] = False
 
 class UpdateGiftEntryRequest(BaseModel):
     guest_name: Optional[str] = None
@@ -399,6 +401,60 @@ async def get_user_events(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+# ============ Search Events (Public) ============
+@api_router.get("/events/search")
+async def search_events(q: str = ""):
+    """Search events by name, phone, location, couple names. Returns public event info."""
+    try:
+        if not q or len(q.strip()) < 2:
+            return {"success": True, "events": []}
+        
+        query_str = q.strip()
+        escaped = re.escape(query_str)
+        regex = {"$regex": escaped, "$options": "i"}
+        
+        search_query = {
+            "$or": [
+                {"name": regex},
+                {"location": regex},
+                {"address": regex},
+                {"bride_name": regex},
+                {"groom_name": regex},
+                {"event_person_name": regex},
+                {"family_head_name": regex},
+                {"phone_number": regex},
+            ]
+        }
+        
+        events = await db.events.find(search_query).sort("date", -1).to_list(20)
+        
+        safe_events = []
+        for event in events:
+            phone = event.get("phone_number", "")
+            masked_phone = ""
+            if phone and len(phone) >= 4:
+                masked_phone = "****" + phone[-4:]
+            
+            safe_events.append({
+                "_id": str(event["_id"]),
+                "name": event.get("name", ""),
+                "event_type": event.get("event_type", ""),
+                "location": event.get("location", ""),
+                "date": event.get("date", ""),
+                "bride_name": event.get("bride_name", ""),
+                "groom_name": event.get("groom_name", ""),
+                "event_person_name": event.get("event_person_name", ""),
+                "couple_photo": event.get("couple_photo", ""),
+                "phone_masked": masked_phone,
+                "guest_count": event.get("guest_count", 0),
+            })
+        
+        return {"success": True, "events": safe_events}
+    except Exception as e:
+        logger.error(f"Error searching events: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 @api_router.get("/events/{event_id}")
 async def get_event(event_id: str):
     try:
@@ -439,6 +495,7 @@ async def create_gift_entry(gift: GiftEntryRequest):
             "payment_mode": gift.payment_mode,
             "notes": gift.notes,
             "added_by": gift.added_by,
+            "remote_gift": gift.remote_gift or False,
             "timestamp": datetime.utcnow(),
         }
         

@@ -153,6 +153,22 @@ export default function Events() {
         )}
       </View>
 
+      {/* Search Event & Send Gift */}
+      <TouchableOpacity
+        style={styles.searchEventBtn}
+        onPress={() => router.push('/search-event')}
+        activeOpacity={0.7}
+      >
+        <View style={styles.searchEventBtnInner}>
+          <Ionicons name="search" size={22} color={theme.colors.secondary} />
+          <View style={styles.searchEventBtnText}>
+            <Text style={styles.searchEventTitle}>Search Event & Send Gift</Text>
+            <Text style={styles.searchEventSubtitle}>Send Chadivimpulu to any event remotely</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={theme.colors.textSecondary} />
+        </View>
+      </TouchableOpacity>
+
       <View style={{ height: 30 }} />
     </ScrollView>
   );
@@ -293,5 +309,33 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: theme.fontSize.md,
     fontWeight: '600',
+  },
+  searchEventBtn: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    overflow: 'hidden',
+  },
+  searchEventBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    gap: 12,
+  },
+  searchEventBtnText: {
+    flex: 1,
+  },
+  searchEventTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '700',
+    color: theme.colors.secondary,
+  },
+  searchEventSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
 });

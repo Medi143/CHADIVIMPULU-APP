@@ -78,7 +78,7 @@ export default function SignUp() {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>{'Chadivimpulu\u2122'}</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 2 }]}>{'Chadivimpulu\u2122'}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>Create Your Account</Text>
           </View>
 
@@ -156,7 +156,7 @@ export default function SignUp() {
             <View style={styles.loginRow}>
               <Text style={[styles.loginHint, { color: theme.colors.textSecondary }]}>Already have an account? </Text>
               <TouchableOpacity onPress={() => router.replace('/login')}>
-                <Text style={[styles.loginLink, { color: theme.colors.primary }]}>Sign In</Text>
+                <Text style={[styles.loginLink, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 1 }]}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>

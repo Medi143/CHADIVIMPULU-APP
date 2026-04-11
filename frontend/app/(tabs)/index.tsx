@@ -141,6 +141,13 @@ export default function Home() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.secondary, paddingTop: insets.top }]}>
         <Text style={[styles.headerBrand, { color: theme.colors.primary }]}>Chadivimpulu™</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/search-event')}
+          style={styles.headerSearchBtn}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="search" size={22} color={theme.colors.white} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -259,6 +266,9 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xl,
     fontWeight: 'bold',
     color: theme.colors.primary,
+  },
+  headerSearchBtn: {
+    padding: theme.spacing.sm,
   },
   headerAction: {
     padding: theme.spacing.sm,

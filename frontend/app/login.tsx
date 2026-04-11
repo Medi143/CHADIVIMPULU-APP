@@ -74,7 +74,7 @@ export default function Login() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to</Text>
-            <Text style={[styles.appName, { color: theme.colors.primary }]}>{'Chadivimpulu\u2122'}</Text>
+            <Text style={[styles.appName, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 2 }]}>{'Chadivimpulu\u2122'}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>Digital Wed Gift Registry</Text>
           </View>
 
@@ -108,7 +108,7 @@ export default function Login() {
             </View>
 
             <TouchableOpacity onPress={() => router.push('/forgot-password')} style={styles.forgotRow}>
-              <Text style={[styles.forgotText, { color: theme.colors.primary }]}>Forgot Password?</Text>
+              <Text style={[styles.forgotText, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 1 }]}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.termsRow} onPress={() => setAgreedToTerms(!agreedToTerms)} activeOpacity={0.7} disabled={loading}>
@@ -117,7 +117,7 @@ export default function Login() {
               </View>
               <Text style={[styles.termsText, { color: theme.colors.text }]}>
                 I agree to the{' '}
-                <Text style={[styles.termsLink, { color: theme.colors.primary }]}>Terms & Conditions</Text>
+                <Text style={[styles.termsLink, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 1 }]}>Terms & Conditions</Text>
               </Text>
             </TouchableOpacity>
 
@@ -136,7 +136,7 @@ export default function Login() {
             <View style={styles.signupRow}>
               <Text style={[styles.signupHint, { color: theme.colors.textSecondary }]}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/signup')}>
-                <Text style={[styles.signupLink, { color: theme.colors.primary }]}>Sign Up</Text>
+                <Text style={[styles.signupLink, { color: theme.colors.primary, textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0.5, height: 0.5 }, textShadowRadius: 1 }]}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>

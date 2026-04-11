@@ -383,6 +383,8 @@ agent_communication:
     - agent: "testing"
       message: "Comprehensive backend testing completed successfully. All 17 tests passed with 100% success rate."
     - agent: "main"
+      message: "NEW SEARCH & REMOTE GIFT FEATURE: 1) GET /api/events/search?q=term - Search events by name, phone, location, couple names. Returns masked phone numbers and public event data. 2) POST /api/gifts now accepts remote_gift=true flag for remote gifts. Test: GET /api/events/search?q=wedding (should return events matching 'wedding'). POST /api/gifts with remote_gift=true to create a remote gift entry."
+    - agent: "main"
       message: "Major update: 1) Gift entry now includes Side selector (bride/groom). 2) PDF export improved with event details header, summary (bride/groom breakdown), colored table with alternating rows, file named as Chadivimpulu_<EventName>.pdf. 3) Excel export improved with Summary sheet + Gift Entries sheet, proper columns (Name, Area, Amount, Payment Mode, Side, Date), file named Chadivimpulu_<EventName>.xlsx. 4) All data stored in MongoDB. Please test: POST /api/gifts with side field, GET /api/export/pdf/{event_id} for improved PDF, GET /api/export/excel/{event_id} for improved Excel."
     - agent: "main"
       message: "NEW AUTH ENDPOINTS ADDED: 1) POST /api/auth/register - register with name, identifier (phone/email), password. 2) POST /api/auth/login - login with identifier + password, returns user data and session token. 3) POST /api/auth/reset-password - reset password with phone + new_password. All use bcrypt for password hashing. Test credentials: register with identifier=9876543210, name=Test User, password=Test@123. Then login with same identifier and password. Old instant-login endpoint still exists but new password auth is the primary flow."
@@ -392,6 +394,8 @@ agent_communication:
       message: "✅ NEW USER PROFILE & STAFF ENDPOINTS TESTING COMPLETED (9/9 tests passed, 100% success rate): 1) GET /api/users/{user_id} - User profile retrieval working perfectly with all required fields. 2) PUT /api/users/{user_id} - Profile update working with name, email, phone, profile_photo fields. 3) DELETE /api/users/{user_id} - Account deletion with cascade working perfectly (deletes events, gifts, staff, counters). 4) POST /api/staff - Staff addition working with phone, event_id, role. 5) GET /api/staff/{event_id} - Staff list retrieval working with user details. 6) DELETE /api/staff/{staff_id} - Staff removal working and verified. All new endpoints fully functional and tested with real data."
     - agent: "testing"
       message: "✅ NEW AUTHENTICATION ENDPOINTS TESTING COMPLETED (3/3 tests passed, 100% success rate): 1) POST /api/auth/register - Registration working perfectly with validation (name ≥2 chars, identifier ≥5 chars, password ≥6 chars, duplicate prevention). 2) POST /api/auth/login - Login working perfectly with bcrypt validation, returns user data + session token. 3) POST /api/auth/reset-password - Password reset working perfectly with bcrypt hashing. Complete auth flow tested: register → login → reset password → login with new password. All endpoints handle validation and error cases correctly."
+    - agent: "testing"
+      message: "✅ NEW SEARCH & REMOTE GIFT FEATURES TESTING COMPLETED (2/2 tests passed, 100% success rate): 1) GET /api/events/search - Event search working perfectly. All test scenarios passed: search with 'wedding' found 6 events, search with 'test' found 1 event, short query (<2 chars) returns empty array, empty query returns empty array, no query parameter returns empty array. Phone masking working correctly (****9999). All required fields present in response. 2) POST /api/gifts with remote_gift=true - Remote gift entry working perfectly. Successfully created remote gift with guest_name='Remote Guest', amount=₹2016, remote_gift=true. Gift appears correctly in event gift list with remote_gift flag verified."
 
   - task: "Improved PDF Export with Event Details and Summary"
     implemented: true
@@ -619,3 +623,27 @@ agent_communication:
         - working: true
           agent: "testing"
           comment: "✅ DELETE /api/staff/{staff_id} working perfectly. Successfully removes staff member and verified removal by checking staff list. Staff no longer appears in event staff list."
+
+  - task: "Event Search Endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GET /api/events/search working perfectly. All test scenarios passed: 1) Search with 'wedding' found 6 events with proper response format. 2) Search with 'test' found 1 event. 3) Short query (<2 chars) returns empty array as expected. 4) Empty query returns empty array. 5) No query parameter returns empty array. Phone masking working correctly (****9999). All required fields present: _id, name, event_type, location, date, bride_name, groom_name, couple_photo, phone_masked, guest_count."
+
+  - task: "Remote Gift Entry"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/gifts with remote_gift=true working perfectly. Successfully created remote gift entry with guest_name='Remote Guest', amount=₹2016, payment_mode='upi', remote_gift=true. Gift appears correctly in event gift list with remote_gift flag set to true. Remote gift verification passed - found 1 remote gift in the event's gift list."
