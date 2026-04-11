@@ -212,7 +212,7 @@ export default function SendGiftScreen() {
           </View>
 
           {/* Amount */}
-          <Text style={styles.label}>Amount (\u20b9) *</Text>
+          <Text style={styles.label}>{'Amount (\u20b9) *'}</Text>
           <TextInput
             style={[styles.input, styles.amountInput]}
             value={amount}
