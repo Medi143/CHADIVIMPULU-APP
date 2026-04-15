@@ -427,7 +427,11 @@ async def search_events(q: str = ""):
             ]
         }
         
-        events = await db.events.find(search_query).sort("date", -1).to_list(20)
+        events = await db.events.find(search_query, {
+            "name": 1, "event_type": 1, "location": 1, "date": 1,
+            "bride_name": 1, "groom_name": 1, "event_person_name": 1,
+            "family_head_name": 1, "phone_number": 1, "guest_count": 1
+        }).sort("date", -1).to_list(20)
         
         safe_events = []
         for event in events:
@@ -538,7 +542,12 @@ async def get_gifts(
                 {"area": {"$regex": search, "$options": "i"}}
             ]
         
-        gifts = await db.gift_entries.find(query).sort("s_no", -1).to_list(1000)
+        gifts = await db.gift_entries.find(query, {
+            "_id": 1, "s_no": 1, "guest_name": 1, "area": 1, "mobile": 1,
+            "amount": 1, "gift_type": 1, "payment_mode": 1, "side": 1,
+            "timestamp": 1, "item_description": 1, "notes": 1, "added_by": 1,
+            "remote_gift": 1, "event_id": 1
+        }).sort("s_no", -1).to_list(1000)
         return {"success": True, "gifts": [serialize_doc(g) for g in gifts]}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -587,7 +596,11 @@ async def delete_gift_entry(gift_id: str):
 @api_router.get("/dashboard/{event_id}")
 async def get_dashboard_stats(event_id: str):
     try:
-        gifts = await db.gift_entries.find({"event_id": event_id}).to_list(10000)
+        gifts = await db.gift_entries.find({"event_id": event_id}, {
+            "_id": 1, "gift_type": 1, "amount": 1, "side": 1,
+            "payment_mode": 1, "timestamp": 1, "guest_name": 1,
+            "area": 1, "s_no": 1, "added_by": 1, "item_description": 1
+        }).to_list(10000)
         event = await db.events.find_one({"_id": ObjectId(event_id)})
         
         total_guests = len(gifts)
@@ -625,7 +638,11 @@ async def get_dashboard_stats(event_id: str):
 @api_router.get("/reports/{event_id}")
 async def get_analytics_report(event_id: str):
     try:
-        gifts = await db.gift_entries.find({"event_id": event_id}).sort("s_no", 1).to_list(10000)
+        gifts = await db.gift_entries.find({"event_id": event_id}, {
+            "s_no": 1, "guest_name": 1, "area": 1, "amount": 1,
+            "payment_mode": 1, "side": 1, "gift_type": 1,
+            "timestamp": 1, "item_description": 1
+        }).sort("s_no", 1).to_list(10000)
         
         if not gifts:
             return {
@@ -718,7 +735,10 @@ async def export_pdf(event_id: str):
         event = await db.events.find_one({"_id": ObjectId(event_id)})
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
-        gifts = await db.gift_entries.find({"event_id": event_id}).sort("s_no", 1).to_list(10000)
+        gifts = await db.gift_entries.find({"event_id": event_id}, {
+            "s_no": 1, "guest_name": 1, "area": 1, "amount": 1,
+            "gift_type": 1, "payment_mode": 1, "side": 1, "item_description": 1
+        }).sort("s_no", 1).to_list(10000)
         
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=letter)
@@ -920,7 +940,10 @@ async def export_excel(event_id: str):
         event = await db.events.find_one({"_id": ObjectId(event_id)})
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
-        gifts = await db.gift_entries.find({"event_id": event_id}).sort("s_no", 1).to_list(10000)
+        gifts = await db.gift_entries.find({"event_id": event_id}, {
+            "s_no": 1, "guest_name": 1, "area": 1, "amount": 1,
+            "gift_type": 1, "payment_mode": 1, "side": 1, "timestamp": 1
+        }).sort("s_no", 1).to_list(10000)
         
         wb = Workbook()
         
