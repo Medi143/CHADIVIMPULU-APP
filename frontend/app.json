@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chadivimpulu",
     "slug": "gift-register",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "giftregister",
@@ -23,7 +23,7 @@
       }
     },
     "android": {
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#002366"
